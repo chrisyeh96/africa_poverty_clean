@@ -1,6 +1,40 @@
 TODO
 - instructions for loading ImageNet weights
 
+## Using publicly available satellite imagery and deep learning to understand economic well-being in Africa
+
+This repository includes the code and data necessary to reproduce the results and figures for the article "Using publicly available satellite imagery and deep learning to understand economic well-being in Africa" published in *Nature Communications*.
+
+[https://doi.org/10.1038/s41467-020-16185-w](Nature Communications)  # TODO
+
+BibTex entry  # TODO
+
+```tex
+@article {
+    
+}
+```
+
+
+## Hardware and Software Requirements
+
+This code was tested on a system with the following specifications:
+
+- operating system: Ubuntu 16.04.6 LTS
+- memory: 125GB RAM
+- disk storage: 500GB
+
+The software requirements are listed in the `env.yml` file, which is meant to be used with `conda` (version 4.8.3). See [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) for instructions on installing conda. Once conda is installed, run the following command to set up the conda environment:
+
+```bash
+conda env create -f env.yml
+```
+
+
+## Instructions
+
+TODO
+
 
 ## Training DHS models
 
@@ -80,9 +114,11 @@ python train_dhs.py \
     --hs_weight_init samescaled
 ```
 
+
 ## Training Transfer-learning Model
 
 TODO
+
 
 ## Training LSMS Models
 

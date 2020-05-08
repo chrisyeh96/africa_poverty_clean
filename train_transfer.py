@@ -1,3 +1,8 @@
+'''
+This file trains ResNet-18 CNN models for estimating nightlights given
+multi-spectral daytime satellite imagery.
+'''
+
 from glob import glob
 import os
 from pprint import pprint
@@ -11,6 +16,9 @@ from utils.trainer import RegressionTrainer
 
 import numpy as np
 import tensorflow as tf
+
+
+ROOT_DIR = os.path.dirname(__file__)  # folder containing this file
 
 
 def run_training(sess: tf.Session,
@@ -30,10 +38,11 @@ def run_training(sess: tf.Session,
                  cache: List[str],
                  log_dir: str,
                  save_ckpt_dir: str,
-                 init_ckpt_dir: str,
-                 imagenet_weights_path: str,
+                 init_ckpt_dir: Optional[str],
+                 imagenet_weights_path: Optional[str],
                  hs_weight_init: Optional[str],
-                 exclude_final_layer: Optional[bool]):
+                 exclude_final_layer: bool
+                 ) -> None:
     '''
     Args
     - sess: tf.Session
@@ -120,7 +129,7 @@ def run_training(sess: tf.Session,
     ###########################
     #          MODEL          #
     ###########################
-    print("Building model...")
+    print('Building model...', flush=True)
     model_params['num_outputs'] = 2  # model predicts both DMSP and VIIRS values
 
     with tf.variable_scope(tf.get_variable_scope()) as model_scope:
@@ -150,17 +159,14 @@ def run_training(sess: tf.Session,
     # initialize the training dataset iterators
     sess.run([train_init_iter, train_eval_init_iter])
 
-    trainer.eval_val(init_iter=val_init_iter)
     for epoch in range(max_epochs):
-        trainer.train_epoch(print_every)
-
         if epoch % eval_every == 0:
             trainer.eval_train(max_nbatches=200)
-            trainer.eval_val(init_iter=val_init_iter)
+            trainer.eval_val(max_nbatches=val_steps_per_epoch)
+        trainer.train_epoch(print_every)
 
     trainer.eval_train(max_nbatches=500)
-    trainer.eval_val(init_iter=val_init_iter)
-    print('Best r^2 on val:', trainer.best_val_r2)
+    trainer.eval_val(max_nbatches=val_steps_per_epoch)
 
     csv_log_path = os.path.join(log_dir, 'results.csv')
     trainer.log_results(csv_log_path)
@@ -170,8 +176,21 @@ def run_training_wrapper(**params: Any) -> None:
     '''
     params is a dict with keys matching the FLAGS defined below
     '''
+    start = time.time()
+    print('Current time:', start)
+
     # print all of the flags
     pprint(params)
+
+    # parameters that might be 'None'
+    none_params = ['ls_bands', 'nl_band', 'hs_weight_init',
+                   'imagenet_weights_path', 'init_ckpt_dir']
+    for p in none_params:
+        if params[p] == 'None':
+            params[p] = None
+
+    # reset any existing graph
+    tf.reset_default_graph()
 
     # set the random seeds
     seed = params['seed']
@@ -184,13 +203,13 @@ def run_training_wrapper(**params: Any) -> None:
         params['fc_reg'], params['conv_reg'], params['lr'])
     log_dir, ckpt_prefix = make_log_and_ckpt_dirs(
         params['log_dir'], params['ckpt_dir'], full_experiment_name)
-    print("Checkpoint prefix:", ckpt_prefix)
+    print(f'Checkpoint prefix: {ckpt_prefix}')
 
     params_filepath = os.path.join(log_dir, 'params.txt')
-    assert not os.path.exists(params_filepath), "Found previous run with same experiment name, stopping"
+    assert not os.path.exists(params_filepath), f'Stopping. Found previous run at: {params_filepath}'
     with open(params_filepath, 'w') as f:
         pprint(params, stream=f)
-        pprint("Checkpoint prefix: {}".format(ckpt_prefix), stream=f)
+        pprint(f'Checkpoint prefix: {ckpt_prefix}', stream=f)
 
     # Create session
     # - MUST set up os.environ['CUDA_VISIBLE_DEVICES'] before creating the tf.Session object
@@ -201,19 +220,16 @@ def run_training_wrapper(**params: Any) -> None:
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
-    # config.gpu_options.per_process_gpu_memory_fraction = params['gpu_usage']
     sess = tf.Session(config=config)
 
     model_params = {
         'fc_reg': params['fc_reg'],
         'conv_reg': params['conv_reg'],
+        'use_dilated_conv_in_first_layer': False,
     }
 
     if params['model_name'] == 'resnet':
-        model_params.update({
-            'num_layers': params['num_layers'],
-            'preact': True
-        })
+        model_params['num_layers'] = params['num_layers']
 
     run_training(
         sess=sess,
@@ -234,9 +250,12 @@ def run_training_wrapper(**params: Any) -> None:
         save_ckpt_dir=ckpt_prefix,
         init_ckpt_dir=params['init_ckpt_dir'],
         imagenet_weights_path=params['imagenet_weights_path'],
-        hs_weight_init=params['hs_weight_init']
-    )
+        hs_weight_init=params['hs_weight_init'])
     sess.close()
+
+    end = time.time()
+    print('End time:', end)
+    print('Time elasped (sec.):', end - start)
 
 
 def main(_: Any) -> None:
@@ -249,47 +268,45 @@ def main(_: Any) -> None:
 
 if __name__ == '__main__':
     flags = tf.app.flags
-    root = '/atlas/u/chrisyeh/hyperspectral_Resnet/'
 
     # paths
     flags.DEFINE_string('experiment_name', 'new_experiment', 'name of the experiment being run')
-    flags.DEFINE_string('ckpt_dir', os.path.join(root, 'ckpts/'), 'checkpoint directory')
-    flags.DEFINE_string('log_dir', os.path.join(root, 'logs/'), 'log directory')
+    flags.DEFINE_string('ckpt_dir', os.path.join(ROOT_DIR, 'ckpts/'), 'checkpoint directory')
+    flags.DEFINE_string('log_dir', os.path.join(ROOT_DIR, 'logs/'), 'log directory')
 
     # initialization
-    flags.DEFINE_string('init_ckpt_dir', '', "path to checkpoint prefix from which to initialize weights")
-    flags.DEFINE_string('imagenet_weights_path', '', "path to ImageNet weights for initialization (default '')")
-    flags.DEFINE_string('hs_weight_init', None, "method for initializing weights of non-RGB bands in 1st conv layer, one of [None, 'random', 'same'] (default None)")
+    flags.DEFINE_string('init_ckpt_dir', None, 'path to checkpoint prefix from which to initialize weights (default None)')
+    flags.DEFINE_string('imagenet_weights_path', None, 'path to ImageNet weights for initialization (default None)')
+    flags.DEFINE_string('hs_weight_init', None, 'method for initializing weights of non-RGB bands in 1st conv layer, one of [None (default), "random", "same", "samescaled"]')
 
     # learning parameters
-    flags.DEFINE_integer('batch_size', 90, "batch size")
-    flags.DEFINE_boolean('augment', True, "whether to use data augmentation")
-    flags.DEFINE_float('fc_reg', 1e-3, "Regularization penalty factor for fully connected layers")
-    flags.DEFINE_float('conv_reg', 1e-3, "Regularization penalty factor for convolution layers")
-    flags.DEFINE_float('lr', 1e-3, "Learning rate for optimizer")
-    flags.DEFINE_float('lr_decay', 1.0, "Decay rate of the learning rate (default 1.0 for no decay)")
+    flags.DEFINE_integer('batch_size', 64, 'batch size')
+    flags.DEFINE_boolean('augment', True, 'whether to use data augmentation')
+    flags.DEFINE_float('fc_reg', 1e-3, 'Regularization penalty factor for fully connected layers')
+    flags.DEFINE_float('conv_reg', 1e-3, 'Regularization penalty factor for convolution layers')
+    flags.DEFINE_float('lr', 1e-3, 'Learning rate for optimizer')
+    flags.DEFINE_float('lr_decay', 1.0, 'Decay rate of the learning rate (default 1.0 for no decay)')
 
     # high-level model control
-    flags.DEFINE_string('model_name', 'resnet', "name of the model to be used, one of ['resnet', 'vggf', 'simple_cnn'] (default 'resnet')")
+    flags.DEFINE_string('model_name', 'resnet', 'name of the model to be used, (default "resnet")')
 
     # resnet-only params
-    flags.DEFINE_integer('num_layers', 18, "Number of ResNet layers, one of [18, 34, 50] (default 18)")
+    flags.DEFINE_integer('num_layers', 18, 'Number of ResNet layers, one of [18 (default), 34, 50]')
 
     # data params
-    flags.DEFINE_string('dataset', '2009-17nl', "dataset to use, options depend on batcher (default '2009-17nl')")
-    flags.DEFINE_string('ls_bands', None, "Landsat bands to use, one of [None (default), 'rgb', 'ms']")
-    flags.DEFINE_string('nl_label', 'center', "what nightlight value to train on, one of ['center' (default), 'mean']")
+    flags.DEFINE_string('dataset', 'DHS_NL', 'dataset to use, options depend on batcher (default "DHS_NL")')
+    flags.DEFINE_string('ls_bands', None, 'Landsat bands to use, one of [None (default), "rgb", "ms"]')
+    flags.DEFINE_string('nl_label', 'center', 'what nightlight value to train on, one of ["center" (default), "mean"]')
 
     # system
-    flags.DEFINE_integer('gpu', 0, "which GPU to use (default 0)")
-    flags.DEFINE_float('gpu_usage', 0.96, "GPU memory usage as a percentage, 0 for CPU-only (default 0.96)")
-    flags.DEFINE_integer('num_threads', 1, "number of threads for batcher")
+    flags.DEFINE_integer('gpu', None, 'which GPU to use (default None)')
+    flags.DEFINE_integer('num_threads', 1, 'number of threads for batcher (default 1)')
+    flags.DEFINE_list('cache', [], 'comma-separated list (no spaces) of datasets to cache in memory, choose from [None, "train", "train_eval", "val"]')
 
     # Misc
-    flags.DEFINE_integer('max_epochs', 50, "maximum number of epochs for training (default 50)")
-    flags.DEFINE_integer('eval_every', 1, "evaluate the model on the validation set after every so many epochs of training")
-    flags.DEFINE_integer('print_every', 20, "print training statistics after every so many steps")
-    flags.DEFINE_integer('seed', 123, "seed for random initialization and shuffling")
-    # flags.DEFINE_boolean('collect_runtime_data', False, "True to collect runtime metadata for debugging")
+    flags.DEFINE_integer('max_epochs', 150, 'maximum number of epochs for training (default 150)')
+    flags.DEFINE_integer('eval_every', 1, 'evaluate the model on the validation set after every so many epochs of training (default 1)')
+    flags.DEFINE_integer('print_every', 40, 'print training statistics after every so many steps (default 40)')
+    flags.DEFINE_integer('seed', 123, 'seed for random initialization and shuffling (default 123)')
 
     tf.app.run()

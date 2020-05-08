@@ -256,7 +256,7 @@ def run_training_wrapper(**params: Any) -> None:
     pprint(params)
 
     # parameters that might be 'None'
-    none_params = ['ls_bands', 'nl_band', 'exclude_final_layer', 'hs_weight_init',
+    none_params = ['ls_bands', 'nl_band', 'hs_weight_init',
                    'imagenet_weights_path', 'init_ckpt_dir']
     for p in none_params:
         if params[p] == 'None':
@@ -388,9 +388,9 @@ if __name__ == '__main__':
     flags.DEFINE_list('cache', [], 'comma-separated list (no spaces) of datasets to cache in memory, choose from [None, "train", "train_eval", "val"]')
 
     # Misc
-    flags.DEFINE_integer('max_epochs', 150, 'maximum number of epochs for training (default 50)')
-    flags.DEFINE_integer('eval_every', 1, 'evaluate the model on the validation set after every so many epochs of training')
-    flags.DEFINE_integer('print_every', 10, 'print training statistics after every so many steps')
-    flags.DEFINE_integer('seed', 123, 'seed for random initialization and shuffling')
+    flags.DEFINE_integer('max_epochs', 150, 'maximum number of epochs for training (default 150)')
+    flags.DEFINE_integer('eval_every', 1, 'evaluate the model on the validation set after every so many epochs of training (default 1)')
+    flags.DEFINE_integer('print_every', 40, 'print training statistics after every so many steps (default 40)')
+    flags.DEFINE_integer('seed', 123, 'seed for random initialization and shuffling (default 123)')
 
     tf.app.run()
