@@ -7,7 +7,7 @@ from typing import Any, DefaultDict, Dict, Iterable, List, Mapping, Optional, Tu
 import numpy as np
 import tensorflow as tf
 
-import batcher
+from batchers import batcher
 
 
 def param_to_str(p: float) -> str:

@@ -7,7 +7,7 @@ TODO
 The generic script for training ResNet-18 models for predicting DHS asset-wealth is as follows:
 
 ```bash
-python train_directly.py \
+python train_dhs.py \
     --label_name wealthpooled --batcher base \
     --model_name resnet --num_layers 18 \
     --lr_decay 0.96 --batch_size 64 \
@@ -62,7 +62,7 @@ Setting     | Values Tested
 Here is an example of a complete training run:
 
 ```bash
-python train_directly.py \
+python train_dhs.py \
     --label_name wealthpooled --batcher base \
     --model_name resnet --num_layers 18 \
     --lr_decay 0.96 --batch_size 64 \
