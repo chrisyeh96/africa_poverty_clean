@@ -11,7 +11,7 @@ BibTex entry  # TODO
 
 ```tex
 @article {
-    
+
 }
 ```
 
@@ -23,6 +23,7 @@ This code was tested on a system with the following specifications:
 - operating system: Ubuntu 16.04.6 LTS
 - memory: 125GB RAM
 - disk storage: 500GB
+- GPU: TODO
 
 The software requirements are listed in the `env.yml` file, which is meant to be used with `conda` (version 4.8.3). See [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) for instructions on installing conda. Once conda is installed, run the following command to set up the conda environment:
 
@@ -49,7 +50,7 @@ python train_dhs.py \
     --cache train,train_eval,val \
     --augment True --eval_every 1 --print_every 40 \
     --ooc {ooc} --max_epochs {max_epochs} \
-    --ckpt_dir {ckpt_dir} --log_dir {log_dir} \
+    --out_dir {out_dir} \
     --keep_frac {keep_frac} --seed {seed} \
     --experiment_name {experiment_name} \
     --dataset {dataset} \
@@ -61,12 +62,11 @@ python train_dhs.py \
 
 Settings for "out-of-country" vs. "in-country" experiments:
 
-Setting      | "out-of-country"   | "in-country"
--------------|--------------------|-------------
-`max_epochs` | 200                | 150
-`ooc`        | `True`             | `False`
-`ckpt_dir`   | `./ckpts/DHS_OOC/` | `./ckpts/DHS_Incountry/`
-`log_dir`    | `./logs/DHS_OOC/`  | `./logs/DHS_Incountry/`
+Setting      | "out-of-country"     | "in-country"
+-------------|----------------------|-------------
+`max_epochs` | 200                  | 150
+`ooc`        | `True`               | `False`
+`out_dir`    | `./outputs/DHS_OOC/` | `./outputs/DHS_Incountry/`
 
 Settings for different CNN models:
 
@@ -104,7 +104,7 @@ python train_dhs.py \
     --cache train,train_eval,val \
     --augment True --eval_every 1 --print_every 40 \
     --ooc True --max_epochs 200 \
-    --ckpt_dir ./ckpts/DHS_OOC/ --log_dir ./logs/DHS_OOC/ \
+    --out_dir ./outputs/DHS_OOC/ \
     --keep_frac 0.25 --seed 456 \
     --experiment_name DHS_OOC_D_ms_samescaled_keep0.25_seed456 \
     --dataset DHS_OOC_D \

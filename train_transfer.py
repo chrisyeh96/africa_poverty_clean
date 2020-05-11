@@ -6,12 +6,13 @@ multi-spectral daytime satellite imagery.
 from glob import glob
 import os
 from pprint import pprint
+import time
 from typing import Any, Dict, List, Optional
 
 from batchers import batcher, dataset_constants
 from models.base_model import BaseModel
 from models.resnet_model import Hyperspectral_Resnet
-from utils.run import get_full_experiment_name, make_log_and_ckpt_dirs
+from utils.run import get_full_experiment_name
 from utils.trainer import RegressionTrainer
 
 import numpy as np
@@ -36,8 +37,7 @@ def run_training(sess: tf.Session,
                  eval_every: int,
                  num_threads: int,
                  cache: List[str],
-                 log_dir: str,
-                 save_ckpt_dir: str,
+                 out_dir: str,
                  init_ckpt_dir: Optional[str],
                  imagenet_weights_path: Optional[str],
                  hs_weight_init: Optional[str],
@@ -60,9 +60,7 @@ def run_training(sess: tf.Session,
     - eval_every: int
     - num_threads: int
     - cache: list of str
-    - log_dir: str, path to directory to save logs for TensorBoard, must already exist
-    - save_ckpt_dir: str, path to checkpoint dir for saving weights
-        - intermediate dirs must already exist
+    - out_dir: str, path to output directory for saving checkpoints and TensorBoard logs, must already exist
     - init_ckpt_dir: str, path to checkpoint dir from which to load existing weights
         - set to empty string '' to use ImageNet or random initialization
     - imagenet_weights_path: str, path to pre-trained weights from ImageNet
@@ -73,8 +71,7 @@ def run_training(sess: tf.Session,
     ####################################
     #          ERROR CHECKING          #
     ####################################
-    assert os.path.exists(log_dir)
-    assert os.path.exists(os.path.dirname(save_ckpt_dir))
+    assert os.path.exists(out_dir)
 
     if model_name == 'resnet':
         model_class = Hyperspectral_Resnet
@@ -153,8 +150,8 @@ def run_training(sess: tf.Session,
         train_model, train_eval_model, val_model,
         train_preds, train_eval_preds, val_preds,
         sess, train_steps_per_epoch, ls_bands, None, learning_rate, lr_decay,
-        log_dir, save_ckpt_dir, init_ckpt_dir, imagenet_weights_path,
-        hs_weight_init, None, image_summaries=False)
+        out_dir, init_ckpt_dir, imagenet_weights_path,
+        hs_weight_init, False, image_summaries=False)
 
     # initialize the training dataset iterators
     sess.run([train_init_iter, train_eval_init_iter])
@@ -167,9 +164,7 @@ def run_training(sess: tf.Session,
 
     trainer.eval_train(max_nbatches=500)
     trainer.eval_val(max_nbatches=val_steps_per_epoch)
-
-    csv_log_path = os.path.join(log_dir, 'results.csv')
-    trainer.log_results(csv_log_path)
+    trainer.log_results()
 
 
 def run_training_wrapper(**params: Any) -> None:
@@ -197,19 +192,19 @@ def run_training_wrapper(**params: Any) -> None:
     np.random.seed(seed)
     tf.set_random_seed(seed)
 
-    # create the log and checkpoint directories if needed
+    # create the output directory if needed
     full_experiment_name = get_full_experiment_name(
         params['experiment_name'], params['batch_size'],
         params['fc_reg'], params['conv_reg'], params['lr'])
-    log_dir, ckpt_prefix = make_log_and_ckpt_dirs(
-        params['log_dir'], params['ckpt_dir'], full_experiment_name)
-    print(f'Checkpoint prefix: {ckpt_prefix}')
+    out_dir = os.path.join(params['out_dir'], full_experiment_name)
+    os.makedirs(out_dir, exist_ok=True)
+    print(f'Outputs directory: {out_dir}')
 
-    params_filepath = os.path.join(log_dir, 'params.txt')
+    params_filepath = os.path.join(out_dir, 'params.txt')
     assert not os.path.exists(params_filepath), f'Stopping. Found previous run at: {params_filepath}'
     with open(params_filepath, 'w') as f:
         pprint(params, stream=f)
-        pprint(f'Checkpoint prefix: {ckpt_prefix}', stream=f)
+        pprint(f'Outputs directory: {out_dir}', stream=f)
 
     # Create session
     # - MUST set up os.environ['CUDA_VISIBLE_DEVICES'] before creating the tf.Session object
@@ -246,8 +241,7 @@ def run_training_wrapper(**params: Any) -> None:
         print_every=params['print_every'],
         eval_every=params['eval_every'],
         num_threads=params['num_threads'],
-        log_dir=log_dir,
-        save_ckpt_dir=ckpt_prefix,
+        out_dir=out_dir,
         init_ckpt_dir=params['init_ckpt_dir'],
         imagenet_weights_path=params['imagenet_weights_path'],
         hs_weight_init=params['hs_weight_init'])
@@ -271,8 +265,7 @@ if __name__ == '__main__':
 
     # paths
     flags.DEFINE_string('experiment_name', 'new_experiment', 'name of the experiment being run')
-    flags.DEFINE_string('ckpt_dir', os.path.join(ROOT_DIR, 'ckpts/'), 'checkpoint directory')
-    flags.DEFINE_string('log_dir', os.path.join(ROOT_DIR, 'logs/'), 'log directory')
+    flags.DEFINE_string('out_dir', os.path.join(ROOT_DIR, 'outputs/'), 'path to output directory for saving checkpoints and TensorBoard logs')
 
     # initialization
     flags.DEFINE_string('init_ckpt_dir', None, 'path to checkpoint prefix from which to initialize weights (default None)')
@@ -288,25 +281,25 @@ if __name__ == '__main__':
     flags.DEFINE_float('lr_decay', 1.0, 'Decay rate of the learning rate (default 1.0 for no decay)')
 
     # high-level model control
-    flags.DEFINE_string('model_name', 'resnet', 'name of the model to be used, (default "resnet")')
+    flags.DEFINE_string('model_name', 'resnet', 'name of the model to be used, currently only "resnet" is supported')
 
     # resnet-only params
-    flags.DEFINE_integer('num_layers', 18, 'Number of ResNet layers, one of [18 (default), 34, 50]')
+    flags.DEFINE_integer('num_layers', 18, 'Number of ResNet layers, one of [18, 34, 50]')
 
     # data params
     flags.DEFINE_string('dataset', 'DHS_NL', 'dataset to use, options depend on batcher (default "DHS_NL")')
     flags.DEFINE_string('ls_bands', None, 'Landsat bands to use, one of [None (default), "rgb", "ms"]')
-    flags.DEFINE_string('nl_label', 'center', 'what nightlight value to train on, one of ["center" (default), "mean"]')
+    flags.DEFINE_string('nl_label', 'center', 'what nightlight value to train on, one of ["center", "mean"]')
 
     # system
     flags.DEFINE_integer('gpu', None, 'which GPU to use (default None)')
-    flags.DEFINE_integer('num_threads', 1, 'number of threads for batcher (default 1)')
+    flags.DEFINE_integer('num_threads', 1, 'number of threads for batcher')
     flags.DEFINE_list('cache', [], 'comma-separated list (no spaces) of datasets to cache in memory, choose from [None, "train", "train_eval", "val"]')
 
     # Misc
-    flags.DEFINE_integer('max_epochs', 150, 'maximum number of epochs for training (default 150)')
-    flags.DEFINE_integer('eval_every', 1, 'evaluate the model on the validation set after every so many epochs of training (default 1)')
-    flags.DEFINE_integer('print_every', 40, 'print training statistics after every so many steps (default 40)')
-    flags.DEFINE_integer('seed', 123, 'seed for random initialization and shuffling (default 123)')
+    flags.DEFINE_integer('max_epochs', 150, 'maximum number of epochs for training')
+    flags.DEFINE_integer('eval_every', 1, 'evaluate the model on the validation set after every so many epochs of training')
+    flags.DEFINE_integer('print_every', 40, 'print training statistics after every so many steps')
+    flags.DEFINE_integer('seed', 123, 'seed for random initialization and shuffling')
 
     tf.app.run()

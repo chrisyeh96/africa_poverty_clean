@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from models.base_model import BaseModel
 from models.init_from_pretrained import init_resnet_v2_from_numpy
@@ -49,7 +49,7 @@ class Hyperspectral_Resnet(BaseModel):
         else:
             raise ValueError('Invalid num_layers passed to model')
 
-        self.block_features = None
+        self.block_features: Optional[Dict[int, Optional[bool]]] = None
         if blocks_to_save is not None:
             self.block_features = {block_index: None for block_index in blocks_to_save}
 

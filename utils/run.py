@@ -2,7 +2,7 @@ from collections import defaultdict
 from glob import glob
 import os
 import time
-from typing import Any, DefaultDict, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, DefaultDict, Dict, Iterable, List, Mapping, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -47,29 +47,6 @@ def get_full_experiment_name(experiment_name: str, batch_size: int,
         full_experiment_name += f'_{tag}'
 
     return full_experiment_name
-
-
-def make_log_and_ckpt_dirs(log_dir_base: str, ckpt_dir_base: str,
-                           full_experiment_name: str) -> Tuple[str, str]:
-    '''Creates 2 new directories:
-      1. log_dir: log_dir_base/full_experiment_name
-      2. ckpt_dir: ckpt_dir_base/full_experiment_name
-
-    Args
-    - log_dir_base: str, path to base directory for logs from all experiments
-    - ckpt_dir_base: str, path to base directory for checkpoints from all experiments
-    - full_experiment_name: str
-
-    Returns: log_dir, ckpt_dir
-    - log_dir: str, path to log directory for this specific experiment
-    - ckpt_prefix: str, prefix for checkpoint files for this experiment, equals ckpt_dir/ckpt
-    '''
-    log_dir = os.path.join(log_dir_base, full_experiment_name)
-    ckpt_dir = os.path.join(ckpt_dir_base, full_experiment_name)
-    os.makedirs(log_dir, exist_ok=True)
-    os.makedirs(ckpt_dir, exist_ok=True)
-    ckpt_prefix = os.path.join(ckpt_dir, 'ckpt')
-    return log_dir, ckpt_prefix
 
 
 def checkpoint_path_exists(ckpt_path: str) -> bool:

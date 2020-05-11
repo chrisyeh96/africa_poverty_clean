@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+import os
 import time
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
@@ -35,8 +36,7 @@ class BaseTrainer(metaclass=ABCMeta):
                  nl_band: Optional[str],
                  learning_rate: float,
                  lr_decay: float,
-                 log_dir: str,
-                 save_ckpt_prefix: str,
+                 out_dir: str,
                  init_ckpt_dir: Optional[str],
                  imagenet_weights_path: Optional[str],
                  hs_weight_init: Optional[str],
@@ -59,8 +59,7 @@ class BaseTrainer(metaclass=ABCMeta):
         - nl_band: one of [None, 'merge', 'split']
         - learning_rate: float
         - lr_decay: float
-        - log_dir: str, path to log directory
-        - save_ckpt_prefix: str
+        - out_dir: str, path to output directory for saving checkpoints and TensorBoard logs, must already exist
         - init_ckpt_dir: str, path to directory with saved checkpoint
         - imagenet_weights_path: str
         - hs_weight_init: str
@@ -74,7 +73,7 @@ class BaseTrainer(metaclass=ABCMeta):
         self.steps_per_epoch = steps_per_epoch
         self.learning_rate = learning_rate
         self.lr_decay = lr_decay
-        self.save_ckpt_prefix = save_ckpt_prefix
+        self.out_dir = out_dir
 
         self.train_images = train_batch['images']
         self.train_labels = train_batch['labels']
@@ -136,7 +135,7 @@ class BaseTrainer(metaclass=ABCMeta):
 
         self.step_summaries_op = tf.summary.merge(step_summaries)
         self.epoch_summaries_op = tf.summary.merge(epoch_summaries)
-        self.summary_writer = tf.summary.FileWriter(log_dir, sess.graph)
+        self.summary_writer = tf.summary.FileWriter(out_dir, sess.graph)
 
         # ====================
         #  EVALUATION METRICS
@@ -354,14 +353,15 @@ class BaseTrainer(metaclass=ABCMeta):
         '''Saves the current model to a checkpoint, and returns the checkpoint path'''
         return self.saver.save(
             sess=self.sess,
-            save_path=self.save_ckpt_prefix,
+            save_path=os.path.join(self.out_dir, 'ckpt'),
             global_step=self.epoch)
 
-    def log_results(self, csv_path: str) -> None:
-        '''
-        Args
-        - csv_path: str, path to save results log
-        '''
+    def log_results(self, csv_path: Optional[str] = None) -> None:
+        '''Saves results log to a CSV file. Defaults to `out_dir/results.csv` if no
+        csv_path is given. If file already exists, it will be overwritten.'''
+        if csv_path is None:
+            csv_path = os.path.join(self.out_dir, 'results.csv')
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
         print('saving csv log to:', csv_path)
         self.results.to_csv(csv_path)
 
@@ -413,8 +413,7 @@ class RegressionTrainer(BaseTrainer):
                  nl_band: Optional[str],
                  learning_rate: float,
                  lr_decay: float,
-                 log_dir: str,
-                 save_ckpt_prefix: str,
+                 out_dir: str,
                  init_ckpt_dir: Optional[str],
                  imagenet_weights_path: Optional[str],
                  hs_weight_init: Optional[str],
@@ -426,7 +425,7 @@ class RegressionTrainer(BaseTrainer):
             train_model, train_eval_model, val_model,
             train_preds, train_eval_preds, val_preds,
             sess, steps_per_epoch, ls_bands, nl_band, learning_rate, lr_decay,
-            log_dir, save_ckpt_prefix, init_ckpt_dir, imagenet_weights_path,
+            out_dir, init_ckpt_dir, imagenet_weights_path,
             hs_weight_init, exclude_final_layer, image_summaries,
             loss_fn=loss_utils.loss_mse,
             loss_type='loss_mse',
@@ -539,8 +538,7 @@ class ClassificationTrainer(BaseTrainer):
                  nl_band: Optional[str],
                  learning_rate: float,
                  lr_decay: float,
-                 log_dir: str,
-                 save_ckpt_prefix: str,
+                 out_dir: str,
                  init_ckpt_dir: Optional[str],
                  imagenet_weights_path: Optional[str],
                  hs_weight_init: Optional[str],
@@ -554,7 +552,7 @@ class ClassificationTrainer(BaseTrainer):
             train_model, train_eval_model, val_model,
             train_preds, train_eval_preds, val_preds,
             sess, steps_per_epoch, ls_bands, nl_band, learning_rate, lr_decay,
-            log_dir, save_ckpt_prefix, init_ckpt_dir, imagenet_weights_path,
+            out_dir, init_ckpt_dir, imagenet_weights_path,
             hs_weight_init, exclude_final_layer, image_summaries,
             loss_fn=loss_utils.loss_xent,
             loss_type='loss_xent',
