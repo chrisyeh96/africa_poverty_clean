@@ -108,19 +108,19 @@ def run_training(sess: tf.Session,
 
     with tf.name_scope('train_batcher'):
         train_batcher = get_batcher(train_indices, shuffle=True, augment=augment,
-                                    epochs=max_epochs, cache=False)
+                                    epochs=max_epochs, cache='train' in cache)
         train_init_iter, train_batch = train_batcher.get_batch()
 
     with tf.name_scope('train_eval_batcher'):
         # shuffle, because we are sampling from this train_eval batcher to get estimates of
         # our training mse / r^2 values, instead of evaluating over all of the training set
         train_eval_batcher = get_batcher(train_indices, shuffle=True, augment=False,
-                                         epochs=max_epochs, cache=False)
+                                         epochs=max_epochs, cache='train_eval' in cache)
         train_eval_init_iter, train_eval_batch = train_eval_batcher.get_batch()
 
     with tf.name_scope('val_batcher'):
         val_batcher = get_batcher(val_indices, shuffle=False, augment=False,
-                                  epochs=1, cache=True)
+                                  epochs=1, cache='val' in cache)
         val_init_iter, val_batch = val_batcher.get_batch()
 
     ###########################
@@ -241,10 +241,12 @@ def run_training_wrapper(**params: Any) -> None:
         print_every=params['print_every'],
         eval_every=params['eval_every'],
         num_threads=params['num_threads'],
+        cache=params['cache'],
         out_dir=out_dir,
         init_ckpt_dir=params['init_ckpt_dir'],
         imagenet_weights_path=params['imagenet_weights_path'],
-        hs_weight_init=params['hs_weight_init'])
+        hs_weight_init=params['hs_weight_init'],
+        exclude_final_layer=params['exclude_final_layer'])
     sess.close()
 
     end = time.time()
@@ -271,6 +273,7 @@ if __name__ == '__main__':
     flags.DEFINE_string('init_ckpt_dir', None, 'path to checkpoint prefix from which to initialize weights (default None)')
     flags.DEFINE_string('imagenet_weights_path', None, 'path to ImageNet weights for initialization (default None)')
     flags.DEFINE_string('hs_weight_init', None, 'method for initializing weights of non-RGB bands in 1st conv layer, one of [None (default), "random", "same", "samescaled"]')
+    flags.DEFINE_boolean('exclude_final_layer', False, 'whether to use checkpoint to initialize final layer')
 
     # learning parameters
     flags.DEFINE_integer('batch_size', 64, 'batch size')

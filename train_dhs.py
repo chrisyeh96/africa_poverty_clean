@@ -1,7 +1,27 @@
 '''
-This file trains ResNet-18 CNN models for estimating asset-wealth for DHS locations.
-'''
+This script trains ResNet CNN models for estimating asset-wealth for DHS locations.
 
+Usage:
+    python train_dhs.py \
+        --label_name wealthpooled --batcher base \
+        --model_name resnet --num_layers 18 \
+        --lr_decay 0.96 --batch_size 64 \
+        --gpu 0 --num_threads 5 \
+        --cache train,train_eval,val \
+        --augment True --eval_every 1 --print_every 40 \
+        --ooc {ooc} --max_epochs {max_epochs} \
+        --out_dir {out_dir} \
+        --keep_frac {keep_frac} --seed {seed} \
+        --experiment_name {experiment_name} \
+        --dataset {dataset} \
+        --ls_bands {ls_bands} --nl_band {nl_band} \
+        --lr {lr} --fc_reg {reg} --conv_reg {reg} \
+        --imagenet_weights_path {imagenet_weights_path} \
+        --hs_weight_init {hs_weight_init}
+
+This will train a ResNet model and save its checkpoints and TensorBoard training logs
+to a subdirectory of `out_dir`.
+'''
 import os
 import pickle
 from pprint import pprint

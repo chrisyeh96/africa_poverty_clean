@@ -11,7 +11,7 @@ from batchers import batcher
 
 
 def param_to_str(p: float) -> str:
-    '''TODO
+    '''Converts a float to a string using the following conventions:
 
     if p < 1, only leaves everything after decimal
     - 0.001 -> '001'
@@ -50,12 +50,7 @@ def get_full_experiment_name(experiment_name: str, batch_size: int,
 
 
 def checkpoint_path_exists(ckpt_path: str) -> bool:
-    '''
-    Args
-    - ckpt_path: str, path to a checkpoint file
-
-    Returns: bool, whether the checkpoint path exists
-    '''
+    '''Checks whether a TensorFlow modeol checkpoint exists at the given path.'''
     if ckpt_path[-6:] == '.index':
         ckpt_path = ckpt_path[-6:]
     if ckpt_path[-5:] == '.meta':
@@ -161,24 +156,6 @@ def run_batches(sess: tf.Session, tensors_dict_ops: Mapping[str, tf.Tensor],
     for name in all_tensors:
         all_tensors[name] = np.concatenate(all_tensors[name])
     return all_tensors
-
-
-def run_epoch(sess: tf.Session, tensors_dict_ops: Mapping[str, tf.Tensor],
-              verbose: bool = False) -> Dict[str, np.ndarray]:
-    '''TODO
-
-    Args
-    - sess: tf.Session
-    - tensors_dict_ops: dict, str => tf.Tensor, shape [batch_size] or [batch_size, D]
-    - verbose: bool, whether to print out current batch and speed
-
-    Note: assumes that the dataset iterator doesn't need initialization, or is
-        already initialized.
-
-    Returns
-    - all_tensors: dict, str => np.array, shape [N] or [N, D]
-    '''
-    return run_batches(sess=sess, tensors_dict_ops=tensors_dict_ops, verbose=verbose)
 
 
 def save_results(dir_path: str, np_dict: dict, filename: str = 'features.npz'

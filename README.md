@@ -25,7 +25,7 @@ This code was tested on a system with the following specifications:
 - disk storage: 500GB
 - GPU: TODO
 
-The software requirements are listed in the `env.yml` file, which is meant to be used with `conda` (version 4.8.3). See [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) for instructions on installing conda. Once conda is installed, run the following command to set up the conda environment:
+The main software requirements are Python 3.7 with TensorFlow r1.15, and R 3.6. The complete list of required packages and library are listed in the `env.yml` file, which is meant to be used with `conda` (version 4.8.3). See [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) for instructions on installing conda. Once conda is installed, run the following command to set up the conda environment:
 
 ```bash
 conda env create -f env.yml
@@ -58,6 +58,12 @@ python train_dhs.py \
     --lr {lr} --fc_reg {reg} --conv_reg {reg} \
     --imagenet_weights_path {imagenet_weights_path} \
     --hs_weight_init {hs_weight_init}
+```
+
+Training progress can be monitored by TensorBoard:
+
+```bash
+tensorboard --logdir {out_dir}
 ```
 
 Settings for "out-of-country" vs. "in-country" experiments:

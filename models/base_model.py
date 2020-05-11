@@ -25,8 +25,8 @@ class BaseModel(metaclass=ABCMeta):
         self.conv_reg = conv_reg
 
         # in subclasses, these should be initialized during __init__()
-        self.outputs = None  # tf.Tensor, shape [batch_size, num_outputs]
-        self.features_layer = None  # tf.Tensor, shape [batch_size, num_features]
+        self.outputs: tf.Tensor = None  # tf.Tensor, shape [batch_size, num_outputs]
+        self.features_layer: tf.Tensor = None  # tf.Tensor, shape [batch_size, num_features]
 
     @abstractmethod
     def init_from_numpy(self, path: str, sess: tf.Session, hs_weight_init: str) -> None:
