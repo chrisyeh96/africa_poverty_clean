@@ -2,8 +2,8 @@
 This file trains ResNet-18 CNN models for estimating nightlights given
 multi-spectral daytime satellite imagery.
 '''
-
 from glob import glob
+import json
 import os
 from pprint import pprint
 import time
@@ -200,11 +200,10 @@ def run_training_wrapper(**params: Any) -> None:
     os.makedirs(out_dir, exist_ok=True)
     print(f'Outputs directory: {out_dir}')
 
-    params_filepath = os.path.join(out_dir, 'params.txt')
+    params_filepath = os.path.join(out_dir, 'params.json')
     assert not os.path.exists(params_filepath), f'Stopping. Found previous run at: {params_filepath}'
-    with open(params_filepath, 'w') as f:
-        pprint(params, stream=f)
-        pprint(f'Outputs directory: {out_dir}', stream=f)
+    with open(params_filepath, 'w') as config_file:
+        json.dump(params, config_file, indent=4)
 
     # Create session
     # - MUST set up os.environ['CUDA_VISIBLE_DEVICES'] before creating the tf.Session object

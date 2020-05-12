@@ -178,35 +178,38 @@ def save_results(dir_path: str, np_dict: dict, filename: str = 'features.npz'
     np.savez_compressed(npz_path, **np_dict)
 
 
-def check_existing(models: dict, logs_root_dir: str, ckpts_root_dir: str,
-                   save_filename: str) -> bool:
-    '''TODO
+def check_existing(model_dirs: Iterable[str], outputs_root_dir: str, test_filename: str) -> bool:
+    '''Checks a list of model directories to ensure that they contain model
+    checkpoints but not a given filename.
+
+    For each model_dir in model_dirs:
+    1. Verifies that `outputs_root_dir/model_dir/ckpt-*` exists
+    2. Verifies that `outputs_root_dir/model_dir/test_filename` does not exist
 
     Args
-    - models: dict, models[model_name]['model_dir'] is name of model directory
-    - logs_root_dir: str, path to root directory for saving logs
-    - ckpts_root_dir: str, path to root directory for saving checkpoints
-    - save_filename: str, name of existing file to check for
+    - model_dirs: list of str, model directories within outputs_root_dir
+    - outputs_root_dir: str, path to root directory for saving logs and checkpoints
+    - test_filename: str, name of file to check for
 
-    Returns: bool, True if ckpts exist and no *.npz files found, otherwise False
+    Returns: bool, True if ckpts exist and no test_filename files found, otherwise False
     '''
-    models_with_results = []
-    for model_name in models:
-        model_dir = models[model_name]['model_dir']
+    ret = True
+    for model_dir in model_dirs:
+        model_dir = os.path.join(outputs_root_dir, model_dir)
 
         # check that checkpoint exists
-        ckpt_glob = os.path.join(ckpts_root_dir, model_dir, 'ckpt-*')
-        assert len(glob(ckpt_glob)) > 0, f'did not find checkpoint matching: {ckpt_glob}'
+        ckpt_glob = os.path.join(model_dir, 'ckpt-*')
+        if len(glob(ckpt_glob)) > 0:
+            ret = False
+            print(f'did not find checkpoint matching: {ckpt_glob}')
 
-        npz_path = os.path.join(logs_root_dir, model_dir, save_filename)
-        if os.path.exists(npz_path):
-            models_with_results.append(model_dir)
+        # check if test file exists
+        test_path = os.path.join(model_dir, test_filename)
+        if os.path.exists(test_path):
+            ret = False
+            print(f'found {test_filename} in {model_dir}')
 
-    if len(models_with_results) > 0:
-        print('The following model directories contain *.npz files that would be overwritten:')
-        print('\n'.join(models_with_results))
-        return False
-    return True
+    return ret
 
 
 def run_extraction_on_models(model_infos: List[Mapping],
