@@ -75,7 +75,7 @@ SURVEY_NAMES_LSMS = ['ethiopia_2011', 'ethiopia_2015', 'malawi_2010', 'malawi_20
 
 SIZES = {
     'DHS': {'train': 12319, 'val': 3257, 'test': 4093, 'all': 19669},  # TODO: is this needed?
-    'DHSnl': {'all': 261396},
+    'DHSNL': {'all': 260415},
     'DHS_OOC_A': {'train': 11797, 'val': 3909, 'test': 3963, 'all': 19669},
     'DHS_OOC_B': {'train': 11820, 'val': 3940, 'test': 3909, 'all': 19669},
     'DHS_OOC_C': {'train': 11800, 'val': 3929, 'test': 3940, 'all': 19669},
@@ -126,7 +126,7 @@ _MEANS_DHS = {
     'VIIRS': 1.096089,
     # 'NIGHTLIGHTS': 5.101585, # nightlights overall
 }
-_MEANS_DHSnl = {
+_MEANS_DHSNL = {
     'BLUE':  0.063927,
     'GREEN': 0.091981,
     'RED':   0.105234,
@@ -161,7 +161,7 @@ _STD_DEVS_DHS = {
     'VIIRS': 4.786354,
     # 'NIGHTLIGHTS': 23.342916, # nightlights overall
 }
-_STD_DEVS_DHSnl = {
+_STD_DEVS_DHSNL = {
     'BLUE':  0.023697,
     'GREEN': 0.032474,
     'RED':   0.051421,
@@ -186,12 +186,12 @@ _STD_DEVS_LSMS = {
 
 MEANS_DICT = {
     'DHS': _MEANS_DHS,
-    'DHSnl': _MEANS_DHSnl,
+    'DHSNL': _MEANS_DHSNL,
     'LSMS': _MEANS_LSMS,
 }
 
 STD_DEVS_DICT = {
     'DHS': _STD_DEVS_DHS,
-    'DHSnl': _STD_DEVS_DHSnl,
+    'DHSNL': _STD_DEVS_DHSNL,
     'LSMS': _STD_DEVS_LSMS,
 }

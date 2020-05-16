@@ -20,6 +20,16 @@ The AWI used in the `wealthpooled` index was computed as follows:
 3. Remove clusters from surveys started in 2008 or earlier (only keep surveys between 2009-2016, inclusive), and remove clusters whose GPS coordinates or urban/rural status were unknown. This leaves us with 19,669 clusters spanning 43 DHS surveys.
 
 
+[`dhsnl_locs.csv`](./dhsnl_locs.csv): This CSV file contains locations used for training the transfer learning models. The 260,415 locations were sampled randomly from an 18x18 grid centered on each DHS survey location, where each grid cell has dimensions 0.00833° latitude and longitude. The original DHS cluster locations (from `dhs_clusters.csv`) are included as well. Locations for which satellite images could not be obtained were filtered out. The columns are as follows:
+
+column    | description
+----------|------------
+`country` | country
+`year`    | year
+`lat`     | latitude coordinate
+`lon`     | longitude coordinate
+
+
 [`lsms_clusters.csv`](./lsms_clusters.csv): This CSV file indicates the locations and years of the LSMS clusters. Each of the 2,913 rows (excluding the CSV header) represents a cluster from a single survey. The columns are as follows:
 
 column          | description
@@ -57,16 +67,6 @@ In contrast, the `index_of_diff` value for a given cluster is computed as follow
 Note that for the same cluster, the number of households used in one pair of years (`year.x`, `year.y`) might be different from the number of households in a different pairt of years. This is because even though LSMS attempts to be a panel survey, some households are not recorded at each survey. For example, a household surveyed in 2005 and 2009 rounds may have moved between 2009 and 2013. Thus, this household would be included in the cluster household count in (`year.x` = 2005, `year.y` = 2009) but not in (`year.x` = 2009, `year.y` = 2013).
 
 
-[`dhsnl_locs.csv`](./dhsnl_locs.csv): This CSV file contains locations used for training the transfer learning models. The 260,415 locations were sampled randomly from an 18x18 grid centered on each DHS survey location, where each grid cell has dimensions 0.00833° latitude and longitude. The columns are as follows:
-
-column    | description
-----------|------------
-`country` | country
-`year`    | year
-`lat`     | latitude coordinate
-`lon`     | longitude coordinate
-
-
 ## Python Pickle (`.pkl`) Files
 
 [`dhs_incountry_folds.pkl`](./dhs_incountry_folds.pkl): This Python Pickle file is created by [`preprocessing/2_create_incountry_folds.ipynb`](../preprocessing/2_create_incountry_folds.ipynb) and contains a Python dictionary representing the "in-country" cross-validation folds for DHS clusters. See [`preprocessing/2_create_incountry_folds.ipynb`](../preprocessing/2_create_incountry_folds.ipynb) for more details.
@@ -85,6 +85,19 @@ In DHS surveys, all households within a single cluster are assigned the same GPS
 Recently, LSMS surveys have also adopted the same location displacement procedure. For more information, please consult the [*Geographic Displacement Procedure and Georeferenced Data Release Policy for the Demographic and Health Surveys*](https://dhsprogram.com/publications/publication-SAR7-Spatial-Analysis-Reports.cfm).
 
 Burgert, Clara R., Josh Colston, Thea Roy, and Blake Zachary. 2013. *Geographic Displacement Procedure and Georeferenced Data Release Policy for the Demographic and Health Surveys*. DHS Spatial Analysis Reports No. 7. Calverton, Maryland, USA: ICF International.
+
+
+## Other notes about the data files
+
+The (lat, lon) coordinates in the CSV files should be read according to the IEEE 32-bit floating point standard. For example, the CSV files can be read using the Python pandas library as follows:
+
+```
+import pandas as pd
+
+df = pd.read_csv('dhs_clusters.csv', float_precision='high', index_col=False)
+for col in ['lat', 'lon']:
+    df[col] = df[col].astype('float32')
+```
 
 
 ## TODO

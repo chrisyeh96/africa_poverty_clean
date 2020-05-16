@@ -9,8 +9,8 @@ import tensorflow as tf
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 DHS_TFRECORDS_PATH_ROOT = os.path.join(ROOT_DIR, 'data/dhs_tfrecords')
-LSMS_TFRECORDS_PATH_ROOT = os.path.join(ROOT_DIR, 'data/lsms_tfrecords')
 DHSNL_TFRECORDS_PATH_ROOT = os.path.join(ROOT_DIR, 'data/dhsnl_tfrecords')
+LSMS_TFRECORDS_PATH_ROOT = os.path.join(ROOT_DIR, 'data/lsms_tfrecords')
 
 
 def get_tfrecord_paths(dataset: str, split: str = 'all') -> List[str]:
@@ -37,6 +37,19 @@ def get_tfrecord_paths(dataset: str, split: str = 'all') -> List[str]:
             glob_path = os.path.join(DHS_TFRECORDS_PATH_ROOT, country_year + '*', '*.tfrecord.gz')
             tfrecord_paths.extend(glob(glob_path))
     tfrecord_paths = sorted(tfrecord_paths)
+    # assert len(tfrecord_paths) == expected_size  # TODO: uncomment this
+    return tfrecord_paths
+
+
+def get_dhsnl_tfrecord_paths() -> List[str]:
+    '''Gets a list of paths to TFRecord files comprising the DHSNL dataset.
+
+    Returns:
+    - tfrecord_paths: list of str, paths to TFRecord files, sorted
+    '''
+    expected_size = SIZES['DHSNL']
+    glob_path = os.path.join(DHSNL_TFRECORDS_PATH_ROOT, '*', '*.tfrecord.gz')
+    tfrecord_paths = sorted(glob(glob_path))
     # assert len(tfrecord_paths) == expected_size  # TODO: uncomment this
     return tfrecord_paths
 
