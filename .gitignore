@@ -1,8 +1,12 @@
 # CUSTOM EXCLUSIONS
 .DS_Store
 ckpts/
-data/dhs_tfrecords*
-data/lsms_tfrecords*
+data/dhs_tfrecords/
+data/dhs_tfrecords_raw/
+data/dhsnl_tfrecords/
+data/dhsnl_tfrecords_raw/
+data/lsms_tfrecords/
+data/lsms_tfrecords_raw/
 logs/
 outputs/
 # END CUSTOM EXCLUSIONS

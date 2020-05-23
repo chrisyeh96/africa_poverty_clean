@@ -1,17 +1,24 @@
-TODO
-- instructions for loading ImageNet weights
-
 ## Using publicly available satellite imagery and deep learning to understand economic well-being in Africa
 
-This repository includes the code and data necessary to reproduce the results and figures for the article "Using publicly available satellite imagery and deep learning to understand economic well-being in Africa" published in *Nature Communications*.
+This repository includes the code and data necessary to reproduce the results and figures for the article "Using publicly available satellite imagery and deep learning to understand economic well-being in Africa" published in *Nature Communications* on May 22, 2020 ([link](https://www.nature.com/articles/s41467-020-16185-w)).
 
-[https://doi.org/10.1038/s41467-020-16185-w](Nature Communications)  # TODO
+Please cite this article as follows, or use the BibTeX entry below.
 
-BibTex entry  # TODO
+> Yeh, C., Perez, A., Driscoll, A. *et al*. Using publicly available satellite imagery and deep learning to understand economic well-being in Africa. *Nat Commun* **11**, 2583 (2020). https://doi.org/10.1038/s41467-020-16185-w
 
 ```tex
-@article {
-
+@article{yeh2020using,
+    author = {Yeh, Christopher and Perez, Anthony and Driscoll, Anne and Azzari, George and Tang, Zhongyi and Lobell, David and Ermon, Stefano and Burke, Marshall},
+    day = {22},
+    doi = {10.1038/s41467-020-16185-w},
+    issn = {2041-1723},
+    journal = {Nature Communications},
+    month = {5},
+    number = {1},
+    title = {{Using publicly available satellite imagery and deep learning to understand economic well-being in Africa}},
+    url = {https://www.nature.com/articles/s41467-020-16185-w},
+    volume = {11},
+    year = {2020}
 }
 ```
 
@@ -21,15 +28,18 @@ BibTex entry  # TODO
 This code was tested on a system with the following specifications:
 
 - operating system: Ubuntu 16.04.6 LTS
-- memory: 125GB RAM
+- CPU: Intel Xeon Silver 4110
+- memory (RAM): 125GB
 - disk storage: 500GB
-- GPU: TODO
+- GPU: 1x NVIDIA Titan Xp
 
-The main software requirements are Python 3.7 with TensorFlow r1.15, and R 3.6. The complete list of required packages and library are listed in the `env.yml` file, which is meant to be used with `conda` (version 4.8.3). See [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) for instructions on installing conda. Once conda is installed, run the following command to set up the conda environment:
+The main software requirements are Python 3.7 with TensorFlow r1.15, and R 3.6. The complete list of required packages and library are listed in the `env.yml` file, which is meant to be used with `conda` (version 4.8.3). See [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) for instructions on installing conda via Miniconda. Once conda is installed, run the following command to set up the conda environment:
 
 ```bash
 conda env create -f env.yml
 ```
+
+If you are using a GPU, you may need to also install CUDA 10 and cuDNN 7.
 
 
 ## Instructions
@@ -129,3 +139,7 @@ TODO
 ## Training LSMS Models
 
 TODO
+
+
+TODO
+- instructions for loading ImageNet weights
