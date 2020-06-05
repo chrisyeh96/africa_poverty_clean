@@ -13,14 +13,19 @@ filter_year <- function(df, year1, year2) {
     dplyr::filter((year >= 2000) & (year <= 2016))
 }
 
-# Create a table of (country, year, # of people sampled by PovcalNet)
-# - NOTE 1: We have updated povcal_time_pop.csv since the original paper was published.
-#     To match the figure from the paper, replace "../data/surveys/povcal_time_pop.csv"
-#     with "../data/surveys/paper/povcal_time_pop.csv".
+# load data frame for coverting between country names and codes
+cross <- readr::read_csv("../data/surveys/crosswalk_countries.csv") %>%
+    dplyr::select(iso3, country)
+
+# create a table of (country, year, # of people sampled by PovcalNet)
+# - NOTE 1: We have updated povcal_time_pop.csv since the original paper was
+#     published. To match the figure from the paper, replace
+#     "../data/surveys/povcal_time_pop.csv" with
+#     "../data/surveys/paper/povcal_time_pop.csv".
 # - NOTE 2: In the updated version of povcal_time_pop.csv, "x" is recorded to indicate that
-#     a survey was conducted but no sample size is reported.
-povcal <- readr::read_csv("../data/surveys/paper/povcal_time_pop.csv") %>%
-# povcal <- readr::read_csv("../data/surveys/povcal_time_pop.csv") %>%
+#     a survey was conducted but no sample size is reported. Here, we replace "x" with the
+#     size of the largest survey otherwise conducted in that country.
+povcal <- readr::read_csv("../data/surveys/povcal_time_pop.csv") %>%
     tidyr::gather(key = "year", value = "povcal", -country) %>%
     dplyr::mutate(povcal = ifelse(is.na(povcal) | (povcal == ""), 0, povcal)) %>%
     filter_year(2000, 2016)
@@ -29,36 +34,36 @@ povcal <- readr::read_csv("../data/surveys/paper/povcal_time_pop.csv") %>%
 # - NOTE: We have updated dhs_time.csv since the original paper was published.
 #     To match the figure from the paper, replace "../data/surveys/dhs_time.csv"
 #     with "../data/surveys/paper/dhs_time.csv".
-dhs <- readr::read_csv("../data/surveys/paper/dhs_time.csv") %>%
-# dhs <- readr::read_csv("../data/surveys/dhs_time.csv") %>%
+dhs <- readr::read_csv("../data/surveys/dhs_time.csv") %>%
     tidyr::gather(key = "year", value = "dhs", -country) %>%
     filter_year(2000, 2016)
 
-# Create a table of (country, year, population)
+# create a table of (country, year, population)
 pop <- readr::read_csv("../data/surveys/population_time.csv") %>%
     tidyr::gather(key = "year", value = "pop", -country, -code) %>%
     dplyr::select(iso3 = code, year, pop) %>%
     filter_year(2000, 2016)
 
+# NOTE: The code used to create the original figure in the paper incorrectly
+#   excluded "Cabo Verde" and "Cote d'Ivoire" from this list.
 africa_countries <- c(
     "Algeria", "Angola",  "Benin", "Botswana", "Burkina Faso", "Burundi",
-    "Cameroon", "Cape Verde", "Central African Republic", "Chad", "Comoros",
-    "Democratic Republic of the Congo", "Djibouti", "Egypt",
+    "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros",
+    "Cote d'Ivoire", "Democratic Republic of the Congo", "Djibouti", "Egypt",
     "Equatorial Guinea", "Eritrea", "Ethiopia", "Gabon", "Gambia", "Ghana",
-    "Guinea", "Guinea-Bissau", "Ivory Coast", "Kenya", "Lesotho", "Liberia",
-    "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius",
-    "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria",
-    "Republic of the Congo", "Rwanda", "Sao Tome and Principe", "Senegal",
-    "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan",
-    "Sudan", "Swaziland", "Tanzania", "Togo", "Tunisia", "Uganda", "Zambia",
-    "Zimbabwe")
+    "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya",
+    "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco",
+    "Mozambique", "Namibia", "Niger", "Nigeria", "Republic of the Congo",
+    "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone",
+    "Somalia", "South Africa", "South Sudan", "Sudan", "Swaziland", "Tanzania",
+    "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe")
 
 # merge povcal, dhs, and pop by crosswalk country names
-cross <- readr::read_csv("../data/surveys/crosswalk_countries.csv")
-full <- merge(dhs, cross, by.x = "country", by.y = "country_simp", all.x = TRUE) %>%
-    merge(povcal, by = c("country", "year"), all = TRUE) %>%
-    merge(pop, by = c("iso3", "year"), all = TRUE) %>%
-    dplyr::select(year, country, dhs, pop, povcal) %>%
+# - results in a table of (country, iso3, year, dhs, povcal, population)
+full <- dplyr::inner_join(pop, cross, by = "iso3") %>%
+    dplyr::left_join(dhs, by = c("country", "year")) %>%
+    dplyr::left_join(povcal, by = c("country", "year")) %>%
+    dplyr::select(country, iso3, year, dhs, povcal, pop) %>%
     dplyr::filter(country %in% africa_countries)
 
 # TODO: deal with the "x" values in the updated povcal
@@ -72,18 +77,22 @@ full <- merge(dhs, cross, by.x = "country", by.y = "country_simp", all.x = TRUE)
 # - creates a table of (year, dhs, pop, povcal, survey_revisit)
 africa <- full %>%
     dplyr::group_by(year) %>%
-    dplyr::summarise_at(c("dhs", "pop", "povcal"), sum, na.rm = TRUE)
+    dplyr::summarize_at(c("dhs", "pop", "povcal"), sum, na.rm = TRUE)
 africa$survey_revisit <- (africa$pop * 365) / (africa$dhs + africa$povcal)
 
 # calculate US annual survey revisit rate
 # - creates a table of (year, pop, num_surveyed, survey_revisit)
-us <- readr::read_csv("../data/surveys/paper/us_surveys_time.csv") %>%
+# - NOTE: We have updated us_surveys_time.csv since the original paper was
+#     published. To match the figure from the paper, replace
+#     "../data/surveys/us_surveys_time.csv" with
+#     "../data/surveys/paper/us_surveys_time.csv".
+us <- readr::read_csv("../data/surveys/us_surveys_time.csv") %>%
     dplyr::select(-survey) %>%
-    dplyr::summarise_all(sum, na.rm = TRUE) %>%
+    dplyr::summarize_all(sum, na.rm = TRUE) %>%
     tidyr::gather(key = "year", value = "num_surveyed") %>%
     filter_year(2000, 2016) %>%
-    merge(pop[pop$iso3 == "USA",], by = "year")
-us$survey_revisit <- (us$pop * 365) / (us$num_surveyed)
+    dplyr::inner_join(pop[pop$iso3 == "USA",], by = "year")
+us$survey_revisit <- (us$pop * 365) / us$num_surveyed
 
 # concatenate the Africa and US data frames
 africa$survey_group <- "africa_surveys"
@@ -97,7 +106,8 @@ surveys <- rbind(us, africa)
 # - l5 = Landsat-5, l7 = Landsat-7, l8 = Landsat-8
 # - s1 = Sentinel-1, s2 = Sentinel-2
 # - modis = MODIS
-gee <- readr::read_csv("../data/overpass/dhs_sample_GEE.csv") %>%
+gee <- readr::read_csv("../data/overpass/dhs_sample_GEE.csv",
+                       col_types = readr::cols(year = readr::col_integer())) %>%
     dplyr::group_by(year) %>%
     dplyr::summarize(
         l5 = 365 / (sum(num_l5, na.rm = TRUE)/500), 
@@ -110,7 +120,8 @@ gee <- readr::read_csv("../data/overpass/dhs_sample_GEE.csv") %>%
         modis = 365 / (sum(num_modis, na.rm = TRUE)*8/500)  # multiply modis by 8 because it's an 8 day composite
     )
 # Planet Labs satellites
-planet <- readr::read_csv("../data/overpass/dhs_sample_Planet.csv") %>%
+planet <- readr::read_csv("../data/overpass/dhs_sample_Planet.csv",
+                          col_types = readr::cols(year = readr::col_integer())) %>%
     dplyr::select(year, cluster_id, count_PlanetScope, count_RapidEye) %>%
     dplyr::group_by(year) %>%
     dplyr::summarize(
@@ -119,34 +130,34 @@ planet <- readr::read_csv("../data/overpass/dhs_sample_Planet.csv") %>%
         all_planet = 365 / (sum(count_RapidEye, count_PlanetScope, na.rm = TRUE)/500)
     )
 # DigitalGlobe satellites
-# - The version of the code used in the paper incorrectly parsed the "cloud" column
-#   as a character vector instead of as an integer vector, so filtering for cloud
-#   cover <= 30% was incorrectly done. To match the figure from the paper, uncomment
-#   the line below which converts the "cloud" column to a character vector.
-# - TODO: resolution??
+# - NOTE: The code used to create the original figure in the paper incorrectly parsed
+#     the "cloud" column as a character vector instead of an integer vector, so the
+#     filtering for cloud cover <= 30% was incorrectly done. To match the figure from
+#     the paper, uncomment the line below which converts the "cloud" column to a
+#     character vector.
 dg <- readr::read_csv(
     "../data/overpass/landinfo_dhs_sample_nocatalog.csv",
     col_types = readr::cols(
         date = readr::col_date(format = "%d-%b-%y"),  # e.g. "8-Jan-03"
         cloud = readr::col_number(),
-        resolution = readr::col_number()  # TODO: dg resolution is up to 1.5m
+        resolution = readr::col_number()
     )) %>%
     # dplyr::mutate(cloud = as.character(cloud)) %>%  # uncomment this line to reproduce the figure in the paper
     dplyr::filter(cloud <= 30) %>%
-    dplyr::mutate(year = as.double(format(date, "%Y"))) %>%
+    dplyr::mutate(year = as.integer(format(date, "%Y"))) %>%
     dplyr::group_by(year) %>%
-    dplyr::summarise(dg = 365 / (n() / 500))
+    dplyr::summarize(dg = 365 / (dplyr::n() / 500))
 
 # Create a table of (year, satellite, satellite_revisit)
 resolution <- data.frame(
     satellite = c("s2", "all_l", "planetscope", "dg", "rapideye"), 
-    res       = c(  10,      30,             3,   .6,          5))  # TODO: dg resolution is up to 1.5m
+    res       = c(  10,      30,             3,   .6,          5))
 overpass <- gee %>%
-    merge(planet, by = "year") %>%
-    merge(dg, by = "year") %>%
+    dplyr::inner_join(planet, by = "year") %>%
+    dplyr::inner_join(dg, by = "year") %>%
     dplyr::select(year, s2, all_l, planetscope, dg, rapideye) %>%
     tidyr::gather(key = "satellite", value = "satellite_revisit", -year) %>%
-    merge(resolution, by = "satellite")
+    dplyr::inner_join(resolution, by = "satellite")
 overpass[overpass == Inf] <- NA
 
 # transformation for y-axis: reverse log base-10
@@ -171,6 +182,9 @@ p <- ggplot() +
     geom_line(data = overpass, aes(year, satellite_revisit, group = satellite, color = as.factor(res)), size = 0.8) +
     geom_line(data = surveys, aes(year, survey_revisit, group = survey_group), size = 0.8, linetype = "1232") +
 
+    # NOTE: for a pixel-perfect recreation of the original figure in the paper,
+    #    remove the commas from the y-axis labels (e.g., replace "10,000" with
+    #    "10000" and replace "1,000,000" with "1000000")
     scale_y_continuous(
         name = "Avg. household revisit interval (days)",
         trans = reverselog_trans(10),
@@ -182,7 +196,7 @@ p <- ggplot() +
         limits = c(2000, 2018),
         breaks = seq(2000, 2018, 2)) +
 
-    scale_colour_manual(values = colorRampPalette(c("#06276E", "#9BC7FF"), bias = 2)(5)) +
+    scale_color_manual(values = colorRampPalette(c("#06276E", "#9BC7FF"), bias = 2)(5)) +
 
     # hide legend and axes lines
     theme_anne("sans", size=25) +
