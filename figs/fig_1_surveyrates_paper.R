@@ -4,7 +4,8 @@
 #   understand. The (extremely minor) differences are purely aesthetic.
 # - Figure 1b is a pixel-perfect replica.
 #
-# Prerequisites: none.
+# Prerequisites: download shapefiles. See
+#   `preprocessing/3_download_gadm_shapefiles.sh`.
 #
 # Libraries used:
 # - data.table
@@ -13,6 +14,7 @@
 # - readr
 # - scales
 # - sf
+# - tibble
 # - tidyr
 
 source("utils.R")
@@ -82,23 +84,6 @@ us[is.na(us)] = 0
 # Figure 1a: survey counts per African country
 ######################################################
 
-# the usual African countries, plus "Western Sahara", "Réunion", and "Mayotte"
-africa_countries = c(
-    "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi",
-    "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros",
-    "Cote d'Ivoire", "Democratic Republic of the Congo", "Djibouti", "Egypt",
-    "Equatorial Guinea", "Eritrea", "Ethiopia", "Gabon", "Gambia", "Ghana",
-    "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya",
-    "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Mayotte",
-    "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria",
-    "Republic of the Congo", "Réunion", "Rwanda", "Sao Tome and Principe",
-    "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa",
-    "South Sudan", "Sudan", "Swaziland", "Tanzania", "Togo", "Tunisia",
-    "Uganda", "Western Sahara", "Zambia", "Zimbabwe")
-africa_iso3s = cross %>%
-    dplyr::filter(country %in% africa_countries) %>%
-    dplyr::pull(iso3)
-
 # NOTE: The code used to create the original figure in the paper incorrectly
 #   used 16 in the numerator for calculating the average # of years between
 #   nationally-representative surveys. The actual numerator should be 17,
@@ -107,27 +92,12 @@ surveys_by_country = povcal[, c("country", "iso3")]
 surveys_by_country$povcal = rowSums(povcal[, year_cols] > 0, na.rm = TRUE)
 surveys_by_country$dhs = rowSums(dhs[, year_cols] > 0, na.rm = TRUE)
 surveys_by_country$total = surveys_by_country$povcal + surveys_by_country$dhs
-surveys_by_country$`years btwn surveys` = 16 / surveys_by_country$num_total  # the "16" is a bug!
-
-# read all admin-0 shapefiles and concatenate together into a single sf tibble
-# with columns ["iso3", "NAME_0", "geometry"]
-africa_shp = list()
-for (i in seq(1, length(africa_iso3s))) {
-    iso3 = africa_iso3s[i]
-    path = sprintf("../data/shapefiles/gadm36_%s_shp/gadm36_%s_0.shp", iso3, iso3)
-
-    # "type = 6" converts all geometries to MULTIPOLYGON so we don't get any
-    # weird problems when concatenating individual sf tibbles together
-    africa_shp[[i]] = sf::st_read(path, stringsAsFactors = FALSE, quiet = TRUE, type = 6)
-}
-africa_shp = sf::st_as_sf(data.table::rbindlist(africa_shp)) %>%
-    sf::st_simplify(dTolerance = 0.05) %>%
-    dplyr::rename(iso3 = GID_0)
+surveys_by_country$`years btwn surveys` = 16 / surveys_by_country$total  # the "16" is a bug!
 
 breaks = c(1, 2, 3, 4, 5, 10, 20)
 color =  c("#F7F7B8", "#F7EB7D", "#F7E04C", "#F7CA23", "#FFA94D", "#FF4D4D")
 
-survey_counts = africa_shp %>%
+survey_counts = load_africa_shp() %>%
     dplyr::inner_join(surveys_by_country, by = "iso3")
 survey_counts$`years btwn surveys` = cut(survey_counts$`years btwn surveys`, breaks)
 
@@ -140,7 +110,7 @@ p = ggplot(survey_counts) +
           axis.text = element_blank(),
           axis.title = element_blank(),
           line = element_blank())
-ggsave("output/fig_1a_mapsurveyscount.pdf", plot = p,  width = 7, height = 7)
+ggsave("output/fig_1a_mapsurveyscount_paper.pdf", plot = p,  width = 7, height = 7)
 
 
 ######################################################
@@ -214,7 +184,7 @@ surveys = rbind(us, africa)
 # - s1 = Sentinel-1, s2 = Sentinel-2
 # - modis = MODIS
 gee = readr::read_csv("../data/overpass/dhs_sample_GEE.csv",
-                       col_types = readr::cols(year = readr::col_integer())) %>%
+                      col_types = readr::cols(year = readr::col_integer())) %>%
     dplyr::group_by(year) %>%
     dplyr::summarize(
         l5 = 365 / (sum(num_l5, na.rm = TRUE)/500), 
@@ -228,7 +198,7 @@ gee = readr::read_csv("../data/overpass/dhs_sample_GEE.csv",
     )
 # Planet Labs satellites
 planet = readr::read_csv("../data/overpass/dhs_sample_Planet.csv",
-                          col_types = readr::cols(year = readr::col_integer())) %>%
+                         col_types = readr::cols(year = readr::col_integer())) %>%
     dplyr::select(year, cluster_id, count_PlanetScope, count_RapidEye) %>%
     dplyr::group_by(year) %>%
     dplyr::summarize(
@@ -236,16 +206,18 @@ planet = readr::read_csv("../data/overpass/dhs_sample_Planet.csv",
         rapideye = 365 / (sum(count_RapidEye, na.rm = TRUE)/500),
         all_planet = 365 / (sum(count_RapidEye, count_PlanetScope, na.rm = TRUE)/500)
     )
-# DigitalGlobe satellites
+# DigitalGlobe (DG) satellites
 # - NOTE: The code used to create the original figure in the paper incorrectly
 #     parsed the "cloud" column as a character vector instead of an integer
 #     vector, so the filtering for cloud cover <= 30% was incorrectly done.
+#     The code also failed to filter out non-DG satellites included
+#     within this CSV file, so the reported revisit rate for DG satellites was
+#     higher than in actuality.
 dg = readr::read_csv(
     "../data/overpass/landinfo_dhs_sample_nocatalog.csv",
-    col_types = readr::cols(
+    col_types = readr::cols_only(
         date = readr::col_date(format = "%d-%b-%y"),  # e.g. "8-Jan-03"
-        cloud = readr::col_number(),
-        resolution = readr::col_number()
+        cloud = readr::col_number()
     )) %>%
     dplyr::mutate(cloud = as.character(cloud)) %>%  # this line is a bug!
     dplyr::filter(cloud <= 30) %>%
@@ -254,7 +226,7 @@ dg = readr::read_csv(
     dplyr::summarize(dg = 365 / (dplyr::n() / 500))
 
 # Create a table of (year, satellite, satellite_revisit)
-resolution = data.frame(
+resolution = tibble::tibble(
     satellite = c("s2", "all_l", "planetscope", "dg", "rapideye"), 
     res       = c(  10,      30,             3,   .6,          5))
 overpass = gee %>%
@@ -312,4 +284,4 @@ p = ggplot() +
     )
 
 dir.create(file.path("output"), showWarnings = FALSE)
-ggsave("output/fig_1b_surveyrates.pdf", plot=p,  width=11.5, height=7.4)
+ggsave("output/fig_1b_surveyrates_paper.pdf", plot=p,  width=11.5, height=7.4)
