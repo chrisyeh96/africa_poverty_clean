@@ -7,7 +7,7 @@
 # Prerequisites: download shapefiles. See
 #   `preprocessing/3_download_gadm_shapefiles.sh`.
 #
-# Libraries used:
+# Libraries explicitly used:
 # - data.table
 # - dplyr
 # - ggplot2
@@ -136,16 +136,25 @@ africa_countries = c(
 # ["country", "year", value]
 
 povcal = povcal_pop %>%
-    tidyr::gather(key = "year", value = "povcal", -country, -iso3) %>%
-    dplyr::mutate(year = as.integer(year))
+    tidyr::pivot_longer(
+        cols = -c("country", "iso3"),
+        names_to = "year",
+        names_transform = list(year = as.integer),
+        values_to = "povcal")
 
 dhs = dhs %>%
-    tidyr::gather(key = "year", value = "dhs", -country, -iso3) %>%
-    dplyr::mutate(year = as.integer(year))
+        tidyr::pivot_longer(
+        cols = -c("country", "iso3"),
+        names_to = "year",
+        names_transform = list(year = as.integer),
+        values_to = "dhs")
 
 pop = pop %>%
-    tidyr::gather(key = "year", value = "pop", -country, -iso3) %>%
-    dplyr::mutate(year = as.integer(year))
+        tidyr::pivot_longer(
+        cols = -c("country", "iso3"),
+        names_to = "year",
+        names_transform = list(year = as.integer),
+        values_to = "pop")
 
 # merge `povcal`, `dhs`, and `pop` by country code
 # - results in a table of (country, iso3, year, dhs, povcal, population)
@@ -165,8 +174,11 @@ africa$survey_revisit = (africa$pop * 365) / (africa$dhs + africa$povcal)
 us = us %>%
     dplyr::select(-survey) %>%
     dplyr::summarize_all(sum, na.rm = TRUE) %>%
-    tidyr::gather(key = "year", value = "num_surveyed") %>%
-    dplyr::mutate(year = as.integer(year)) %>%
+    tidyr::pivot_longer(
+        cols = tidyr::everything(),
+        names_to = "year",
+        names_transform = list(year = as.integer),
+        values_to = "num_surveyed") %>%
     dplyr::inner_join(pop[pop$iso3 == "USA",], by = "year")
 us$survey_revisit = (us$pop * 365) / us$num_surveyed
 
@@ -233,7 +245,7 @@ overpass = gee %>%
     dplyr::inner_join(planet, by = "year") %>%
     dplyr::inner_join(dg, by = "year") %>%
     dplyr::select(year, s2, all_l, planetscope, dg, rapideye) %>%
-    tidyr::gather(key = "satellite", value = "satellite_revisit", -year) %>%
+    tidyr::pivot_longer(-year, names_to = "satellite", values_to = "satellite_revisit") %>%
     dplyr::inner_join(resolution, by = "satellite")
 overpass[overpass == Inf] = NA
 

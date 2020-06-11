@@ -1,12 +1,12 @@
-# Libraries used:
+# Libraries explicitly used:
 # - data.table
 # - dplyr
 # - ggplot2
 # - readr
 # - sf
 
-library(dplyr, quietly=T)
-library(ggplot2, quietly=T)
+library(dplyr, quietly = TRUE)  # for the pipe %>% operator
+library(ggplot2, quietly = TRUE)
 
 theme_anne = function(font = "sans", size = 10) {
     ggthemes::theme_tufte(base_size = size, base_family = font) %+replace%
