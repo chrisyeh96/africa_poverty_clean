@@ -1,6 +1,6 @@
 ## CSV Files
 
-[`dhs_clusters.csv`](./dhs_clusters.csv): This CSV file contains data derived from DHS surveys, aggregated to the cluster level. Each of the 19,669 rows (excluding the CSV header) represents a cluster from a single survey. The columns are as follows:
+[**`dhs_clusters.csv`**](./dhs_clusters.csv): This CSV file contains data derived from DHS surveys, aggregated to the cluster level. Each of the 19,669 rows (excluding the CSV header) represents a cluster from a single survey. The columns are as follows:
 
 column          | description
 ----------------|------------
@@ -20,7 +20,7 @@ The AWI used in the `wealthpooled` index was computed as follows:
 3. Remove clusters from surveys started in 2008 or earlier (only keep surveys between 2009-2016, inclusive), and remove clusters whose GPS coordinates or urban/rural status were unknown. This leaves us with 19,669 clusters spanning 43 DHS surveys.
 
 
-[`dhsnl_locs.csv`](./dhsnl_locs.csv): This CSV file contains locations used for training the transfer learning models. The 260,415 locations were sampled randomly from an 18x18 grid centered on each DHS survey location, where each grid cell has dimensions 0.00833° latitude and longitude. The original DHS cluster locations (from `dhs_clusters.csv`) are included as well. Locations for which satellite images could not be obtained were filtered out. The columns are as follows:
+[**`dhsnl_locs.csv`**](./dhsnl_locs.csv): This CSV file contains locations used for training the transfer learning models. The 260,415 locations were sampled randomly from an 18x18 grid centered on each DHS survey location, where each grid cell has dimensions 0.00833° latitude and longitude. The original DHS cluster locations (from `dhs_clusters.csv`) are included as well. Locations for which satellite images could not be obtained were filtered out. The columns are as follows:
 
 column    | description
 ----------|------------
@@ -30,7 +30,7 @@ column    | description
 `lon`     | longitude coordinate
 
 
-[`lsms_clusters.csv`](./lsms_clusters.csv): This CSV file indicates the locations and years of the LSMS clusters. Each of the 2,913 rows (excluding the CSV header) represents a cluster from a single survey. The columns are as follows:
+[**`lsms_clusters.csv`**](./lsms_clusters.csv): This CSV file indicates the locations and years of the LSMS clusters. Each of the 2,913 rows (excluding the CSV header) represents a cluster from a single survey. The columns are as follows:
 
 column          | description
 ----------------|------------
@@ -42,7 +42,7 @@ column          | description
 `geolev2`       | administrative level-2 region name
 
 
-[`lsms_diffs.csv`](./lsms_diffs.csv): This CSV file contains the changes in asset wealth index (AWI) over time for LSMS clusters. Each of the 1,539 rows (excluding the CSV header) represents a cluster across two surveys. The columns are as follows:
+[**`lsms_diffs.csv`**](./lsms_diffs.csv): This CSV file contains the changes in asset wealth index (AWI) over time for LSMS clusters. Each of the 1,539 rows (excluding the CSV header) represents a cluster across two surveys. The columns are as follows:
 
 column          | description
 ----------------|------------
@@ -85,15 +85,15 @@ The following LSMS surveys were included (both for creating the "wealthpooled" i
 
 ## Python Pickle (`.pkl`) Files
 
-[`dhs_incountry_folds.pkl`](./dhs_incountry_folds.pkl): This Python Pickle file contains a Python dictionary representing the "in-country" cross-validation folds for DHS clusters. See [`preprocessing/2_create_incountry_folds.ipynb`](../preprocessing/2_create_incountry_folds.ipynb) for more details.
+[**`dhs_incountry_folds.pkl`**](./dhs_incountry_folds.pkl): This Python Pickle file contains a Python dictionary representing the "in-country" cross-validation folds for DHS clusters. See [`preprocessing/2_create_incountry_folds.ipynb`](../preprocessing/2_create_incountry_folds.ipynb) for more details.
 
 
-[`lsms_incountry_folds.pkl`](./lsms_incountry_folds.pkl): Similar to `dhs_incountry_folds.pkl`, except for LSMS clusters.
+[**`lsms_incountry_folds.pkl`**](./lsms_incountry_folds.pkl): Similar to `dhs_incountry_folds.pkl`, except for LSMS clusters.
 
 
 ## Files in `data/overpass/`
 
-[`dhs_sample_GEE.csv`](./overpass/dhs_sample_GEE.csv): Number of times various satellites imaged each of 500 clusters locations randomly sampled from DHS surveys per year from 2000 to 2018, inclusive. The images from satellites in this file (Landsat-5/7/8, MODIS, and Sentinel-1/2) are publicly accessible.
+[**`dhs_sample_GEE.csv`**](./overpass/dhs_sample_GEE.csv): Number of times various satellites imaged each of 500 clusters locations randomly sampled from DHS surveys per year from 2000 to 2018, inclusive. The images from satellites in this file (Landsat-5/7/8, MODIS, and Sentinel-1/2) are publicly accessible.
 - TODO(ztang): include script used to generate this file
 
 column         | description
@@ -111,7 +111,7 @@ column         | description
 `year`         | year
 
 
-[`dhs_sample_Planet.csv`](./overpass/dhs_sample_Planet.csv): Number of times the PlanetScope and RapidEye satellites from Planet Labs imaged each of 500 clusters locations randomly sampled from DHS surveys per year from 2000 to 2018, inclusive. The locations are the same as in the `dhs_sample_GEE.csv` file.
+[**`dhs_sample_Planet.csv`**](./overpass/dhs_sample_Planet.csv): Number of times the PlanetScope and RapidEye satellites from Planet Labs imaged each of 500 clusters locations randomly sampled from DHS surveys per year from 2000 to 2018, inclusive. The locations are the same as in the `dhs_sample_GEE.csv` file.
 - TODO(ztang): include script used to generate this file
 
 column              | description
@@ -122,14 +122,14 @@ column              | description
 `cluster_id`        | DHS survey and cluster ID
 
 
-[`landinfo_dhs_sample_nocatalog.csv`](./overpass/landinfo_dhs_sample_nocatalog.csv): Record of various other satellites imaging each of 500 clusters locations randomly sampled from DHS surveys per year from 2000 to 2018, inclusive. The locations are the same as in the `dhs_sample_GEE.csv` file. Includes the following satellites:
+[**`landinfo_dhs_sample_nocatalog.csv`**](./overpass/landinfo_dhs_sample_nocatalog.csv): Record of various other satellites imaging each of 500 clusters locations randomly sampled from DHS surveys per year from 2000 to 2018, inclusive. The locations are the same as in the `dhs_sample_GEE.csv` file. Includes the following satellites:
 - DigitalGlobe: IKONOS (≤1.06m), QuickBird-2 (≤0.85m), GeoEye-1 (≤0.61m), WorldView-1/2/3/4 (≤0.70m/0.63m/0.42m/0.40m)
 - Airbus: Pléiades-1A/1B (0.50m), SPOT-6/7 (1.50m)
 - Planet Labs: SkySat (≤1.20m)
 - KOMPSAT-2/3/3A (1.00m/0.70m/0.30m)
 - TripleSat (1.00m)
 
-- TODO(ztang): include script used to generate this file
+TODO(ztang): include script used to generate this file
 
 column        | description
 --------------|------------
@@ -148,7 +148,7 @@ column        | description
 
 ## Files in `data/survey/`
 
-[`crosswalk_countries.csv`](./surveys/crosswalk_countries.csv): "crosswalk" between ISO3, country names, and country names used in prediction data. Used in code for various figures.
+[**`crosswalk_countries.csv`**](./surveys/crosswalk_countries.csv): "crosswalk" between ISO3, country names, and country names used in prediction data. Used in code for various figures.
 
 column          | description
 ----------------|------------
@@ -157,20 +157,20 @@ column          | description
 `country_pred`  | TODO: unclear
 
 
-[`dhs_time.csv`](./surveys/dhs_time.csv): Number of individuals in each African country surveyed each year by DHS in nationally-representative asset wealth surveys, for completed surveys started between 2000 and 2016, inclusive. A DHS survey is considered to be a nationally-representative asset wealth survey if it was listed under the [DHS wealth index page](https://dhsprogram.com/topics/wealth-index/Wealth-Index-Construction.cfm) (accessed on [May 21, 2020](https://web.archive.org/web/20200521053030/https://dhsprogram.com/topics/wealth-index/Wealth-Index-Construction.cfm)) or if its survey report indicated as such. We gathered the list of all non-SPA surveys from the [DHS Survey Search website](https://dhsprogram.com/What-We-Do/Survey-Search.cfm) (accessed on [May 20, 2020](https://web.archive.org/web/20200521011046/https://dhsprogram.com/what-we-do/survey-search.cfm?sendsearch=1&sur_status=Completed&YrFrom=2000&YrTo=2020&str1=10,27,43,76,52,3,50,51,4,100,5,59,53,60,243,7,118,12,220,65,66,129,14,67,20,160,22,23,24,25,68,61,28,29,30,62,35,205,36,208,55,38,39,41,44,47,48,,&str2=1,2,3,17,4,7,8,9,13,18,16,,&crt=1&listview=2&listgrp=0)) and removed the three surveys that did not include a nationally-representative survey of asset wealth: Central African Republic MICS 2010, Mauritania Special 2003-04, and Sao Tome and Principe MICS 2014. Country names were changed to match those in `crosswalk_countries.csv`. Used in [`figs/fig_1_surveyrates.R`](../figs/fig_1_surveyrates.R).
+[**`dhs_time.csv`**](./surveys/dhs_time.csv): Number of individuals in each African country surveyed each year by DHS in nationally-representative asset wealth surveys, for completed surveys started between 2000 and 2016, inclusive. A DHS survey is considered to be a nationally-representative asset wealth survey if it was listed under the [DHS wealth index page](https://dhsprogram.com/topics/wealth-index/Wealth-Index-Construction.cfm) (accessed on [May 21, 2020](https://web.archive.org/web/20200521053030/https://dhsprogram.com/topics/wealth-index/Wealth-Index-Construction.cfm)) or if its survey report indicated as such. We gathered the list of all non-SPA surveys from the [DHS Survey Search website](https://dhsprogram.com/What-We-Do/Survey-Search.cfm) (accessed on [May 20, 2020](https://web.archive.org/web/20200521011046/https://dhsprogram.com/what-we-do/survey-search.cfm?sendsearch=1&sur_status=Completed&YrFrom=2000&YrTo=2020&str1=10,27,43,76,52,3,50,51,4,100,5,59,53,60,243,7,118,12,220,65,66,129,14,67,20,160,22,23,24,25,68,61,28,29,30,62,35,205,36,208,55,38,39,41,44,47,48,,&str2=1,2,3,17,4,7,8,9,13,18,16,,&crt=1&listview=2&listgrp=0)) and removed the three surveys that did not include a nationally-representative survey of asset wealth: Central African Republic MICS 2010, Mauritania Special 2003-04, and Sao Tome and Principe MICS 2014. Country names were changed to match those in `crosswalk_countries.csv`. Used in [`figs/fig_1_surveyrates.R`](../figs/fig_1_surveyrates.R).
 
 > The original version of this file used in the paper ([`data/surveys/paper/dhs_time.csv`](./surveys/paper/dhs_time.csv)) was incomplete, missed some surveys, and had some inaccurate numbers. See the [errata](../errata.md). Used in [`figs/fig_1_surveyrates_paper.R`](../figs/fig_1_surveyrates_paper.R).
 
 
-[`population_time.csv`](./surveys/population_time.csv): Annual population estimates for each country between 1960 and 2017, inclusive. Downloaded from the World Bank, variable "Population, total (SP.POP.TOTL)", version "2018 Oct". See the World Bank World Development Indicators Database Archives: [https://datacatalog.worldbank.org/dataset/wdi-database-archives](https://datacatalog.worldbank.org/dataset/wdi-database-archives). Used in [`figs/fig_1_surveyrates.R`](../figs/fig_1_surveyrates.R).
+[**`population_time.csv`**](./surveys/population_time.csv): Annual population estimates for each country between 1960 and 2017, inclusive. Downloaded from the World Bank, variable "Population, total (SP.POP.TOTL)", version "2018 Oct". See the World Bank World Development Indicators Database Archives: [https://datacatalog.worldbank.org/dataset/wdi-database-archives](https://datacatalog.worldbank.org/dataset/wdi-database-archives). Used in [`figs/fig_1_surveyrates.R`](../figs/fig_1_surveyrates.R).
 
 
-[`povcal_time_pop.csv`](./surveys/povcal_time_pop.csv): Number of individuals in each country surveyed each year for the World Bank's PovcalNet. Compiled from [http://iresearch.worldbank.org/PovcalNet/povOnDemand.aspx](http://iresearch.worldbank.org/PovcalNet/povOnDemand.aspx) by finding the number of observations in each "detailed output" for each survey. For type "C" surveys (where consumption is measured at a group level and individual sample sizes aren't reported), "-1" is recorded to indicate there was a survey but no sample size is given. Used in [`figs/fig_1_surveyrates.R`](../figs/fig_1_surveyrates.R).
+[**`povcal_time_pop.csv`**](./surveys/povcal_time_pop.csv): Number of individuals in each country surveyed each year for the World Bank's PovcalNet. Compiled from [http://iresearch.worldbank.org/PovcalNet/povOnDemand.aspx](http://iresearch.worldbank.org/PovcalNet/povOnDemand.aspx) by finding the number of observations in each "detailed output" for each survey. For type "C" surveys (where consumption is measured at a group level and individual sample sizes aren't reported), "-1" is recorded to indicate there was a survey but no sample size is given. Used in [`figs/fig_1_surveyrates.R`](../figs/fig_1_surveyrates.R).
 
 > TODO: describe the `./paper/` version. See the [errata](../errata.md). Used in [`figs/fig_1_surveyrates_paper.R`](../figs/fig_1_surveyrates_paper.R).
 
 
-[`us_surveys_time.csv`](./surveys/us_surveys_time.csv): Number of people sampled in surveys as pulled from the following surveys. All sample numbers that are household counts are multiplied by the mean household size in that year, as found at [https://www.census.gov/data/tables/time-series/demo/families/households.html](https://www.census.gov/data/tables/time-series/demo/families/households.html). Used in [`figs/fig_1_surveyrates.R`](../figs/fig_1_surveyrates.R).
+[**`us_surveys_time.csv`**](./surveys/us_surveys_time.csv): Number of people sampled in surveys as pulled from the following surveys. All sample numbers that are household counts are multiplied by the mean household size in that year, as found at [https://www.census.gov/data/tables/time-series/demo/families/households.html](https://www.census.gov/data/tables/time-series/demo/families/households.html). Used in [`figs/fig_1_surveyrates.R`](../figs/fig_1_surveyrates.R).
 - ACS: https://www.census.gov/acs/www/methodology/sample-size-and-data-quality/sample-size/index.php
     calculated by summing the Final Interviews and Final Actual Interviews columns
 - AHS until 2015: https://www.census.gov/content/dam/Census/programs-surveys/ahs/publications/AHS%20Sample%20Determination%20and%20Decisions.pdf
