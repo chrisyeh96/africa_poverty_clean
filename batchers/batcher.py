@@ -1,82 +1,13 @@
-from batchers.dataset_constants import SIZES, SURVEY_NAMES, MEANS_DICT, STD_DEVS_DICT
-
-from typing import Dict, Iterable, List, Mapping, Optional, Tuple, Union
-from glob import glob
-import os
+from typing import Dict, Iterable, Mapping, Optional, Tuple, Union
 
 import tensorflow as tf
 
-
-ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-DHS_TFRECORDS_PATH_ROOT = os.path.join(ROOT_DIR, 'data/dhs_tfrecords')
-DHSNL_TFRECORDS_PATH_ROOT = os.path.join(ROOT_DIR, 'data/dhsnl_tfrecords')
-LSMS_TFRECORDS_PATH_ROOT = os.path.join(ROOT_DIR, 'data/lsms_tfrecords')
-
-
-def get_tfrecord_paths(dataset: str, split: str = 'all') -> List[str]:
-    '''Gets a list of paths to TFRecords corresponding to the given split of
-    a desired DHS dataset.
-
-    Args
-    - dataset: str, a key in SURVEY_NAMES
-    - split: str, one of ['train', 'val', 'test', 'all']
-
-    Returns:
-    - tfrecord_paths: list of str, paths to TFRecord files, sorted
-    '''
-    expected_size = SIZES[dataset][split]
-    if split == 'all':
-        splits = ['train', 'val', 'test']
-    else:
-        splits = [split]
-
-    survey_names = SURVEY_NAMES[dataset]
-    tfrecord_paths = []
-    for split in splits:
-        for country_year in survey_names[split]:
-            glob_path = os.path.join(DHS_TFRECORDS_PATH_ROOT, country_year + '*', '*.tfrecord.gz')
-            tfrecord_paths.extend(glob(glob_path))
-    tfrecord_paths = sorted(tfrecord_paths)
-    # assert len(tfrecord_paths) == expected_size  # TODO: uncomment this
-    return tfrecord_paths
-
-
-def get_dhsnl_tfrecord_paths() -> List[str]:
-    '''Gets a list of paths to TFRecord files comprising the DHSNL dataset.
-
-    Returns:
-    - tfrecord_paths: list of str, paths to TFRecord files, sorted
-    '''
-    expected_size = SIZES['DHSNL']
-    glob_path = os.path.join(DHSNL_TFRECORDS_PATH_ROOT, '*', '*.tfrecord.gz')
-    tfrecord_paths = sorted(glob(glob_path))
-    # assert len(tfrecord_paths) == expected_size  # TODO: uncomment this
-    return tfrecord_paths
-
-
-def get_lsms_tfrecord_paths(cys: Optional[Iterable[str]] = None) -> List[str]:
-    '''Gets a list of paths to TFRecords for a given list of LSMS surveys.
-
-    Args
-    - cys: list of 'country_year' str, order matters, or None for all
-
-    Returns:
-    - tfrecord_paths: list of str, paths to TFRecord files, order of country_years given by cys
-    '''
-    if cys is None:
-        cys = sorted(SIZES['LSMS'].keys())
-    expected_size = sum([SIZES['LSMS'][cy] for cy in cys])
-    tfrecord_paths = []
-    for cy in cys:
-        glob_path = os.path.join(LSMS_TFRECORDS_PATH_ROOT, cy, '*.tfrecord.gz')
-        tfrecord_paths.extend(sorted(glob(glob_path)))
-    # assert len(tfrecord_paths) == expected_size  # TODO: uncomment this
-    return tfrecord_paths
+from batchers.dataset_constants import MEANS_DICT, STD_DEVS_DICT
 
 
 class Batcher():
     def __init__(self,
-                 tfrecord_files: Union[str, Iterable[str], tf.Tensor],
+                 tfrecord_files: Union[Iterable[str], tf.Tensor],
                  label_name: Optional[str] = None,
                  scalar_features: Optional[Mapping[str, tf.DType]] = None,
                  ls_bands: Optional[str] = 'rgb',
@@ -85,17 +16,16 @@ class Batcher():
                  batch_size: int = 1,
                  epochs: int = 1,
                  normalize: Optional[str] = None,
-                 shuffle: bool = True,
-                 augment: bool = True,
+                 shuffle: bool = False,
+                 augment: bool = False,
                  clipneg: bool = True,
                  cache: bool = False,
-                 num_threads: int = 1
-                 ) -> None:
+                 num_threads: int = 1):
         '''
         Args
-        - tfrecord_files: str, list of str, or a tf.Tensor (e.g. tf.placeholder) of str
+        - tfrecord_files: list of str, or a tf.Tensor (e.g. tf.placeholder) of str
             - path(s) to TFRecord files containing satellite images
-        - label_name: str, name of feature within TFRecords of labels, or None
+        - label_name: str, name of feature within TFRecords to use as label, or None
         - scalar_features: dict, maps names (str) of additional features within a TFRecord
             to their parsed types
         - ls_bands: one of [None, 'rgb', 'ms'], which Landsat bands to include in batch['images']
@@ -154,7 +84,7 @@ class Batcher():
         '''Gets the tf.Tensors that represent a batch of data.
 
         Returns
-        - iter_init: tf.Operation that should be run before each epoch
+        - iter_init: tf.Operation that should be run before first use
         - batch: dict, str -> tf.Tensor
             - 'images': tf.Tensor, shape [batch_size, H, W, C], type float32
                 - C depends on the ls_bands and nl_band settings
@@ -165,10 +95,10 @@ class Batcher():
 
         IMPLEMENTATION NOTE: The order of tf.data.Dataset.batch() and .repeat() matters!
             Suppose the size of the dataset is not evenly divisible by self.batch_size.
-            If batch then repeat, ie. `ds.batch(batch_size).repeat(num_epochs)`:
+            If batch then repeat, i.e., `ds.batch(batch_size).repeat(num_epochs)`:
                 the last batch of every epoch will be smaller than batch_size
-            If repeat then batch, ie. `ds.repeat(num_epochs).batch(batch_size)`:
-                the boundaries between epochs are blurred, ie. the dataset "wraps around"
+            If repeat then batch, i.e., `ds.repeat(num_epochs).batch(batch_size)`:
+                the boundaries between epochs are blurred, i.e., the dataset "wraps around"
         '''
         if self.shuffle:
             # shuffle the order of the input files, then interleave their individual records

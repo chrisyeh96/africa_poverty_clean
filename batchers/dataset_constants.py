@@ -86,7 +86,7 @@ SIZES = {
     'DHS_incountry_C': {'train': 11801, 'val': 3934, 'test': 3934, 'all': 19669},
     'DHS_incountry_D': {'train': 11802, 'val': 3933, 'test': 3934, 'all': 19669},
     'DHS_incountry_E': {'train': 11802, 'val': 3934, 'test': 3933, 'all': 19669},
-    'LSMSincountry': {'train': 1812, 'val': 604, 'test': 604, 'all': 3020},  # TODO: is this needed
+    'LSMSincountry': {'train': 1812, 'val': 604, 'test': 604, 'all': 3020},  # TODO: is this needed?
     'LSMS': {'ethiopia_2011': 327, 'ethiopia_2015': 327, 'malawi_2010': 102,
              'malawi_2016': 102, 'nigeria_2010': 480, 'nigeria_2015': 480,
              'tanzania_2008': 300, 'tanzania_2012': 300, 'uganda_2005': 165,

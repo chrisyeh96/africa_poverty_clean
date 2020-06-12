@@ -1,9 +1,11 @@
 '''
-This script trains ResNet CNN models for estimating asset-wealth for DHS locations.
+This script trains ResNet CNN models to estimate wealth for DHS and LSMS
+locations. Model checkpoints and TensorBoard training logs are saved to
+`out_dir`.
 
 Usage:
     python train_dhs.py \
-        --label_name wealthpooled --batcher base \
+        --label_name wealthpooled \
         --model_name resnet --num_layers 18 \
         --lr_decay 0.96 --batch_size 64 \
         --gpu 0 --num_threads 5 \
@@ -18,18 +20,14 @@ Usage:
         --lr {lr} --fc_reg {reg} --conv_reg {reg} \
         --imagenet_weights_path {imagenet_weights_path} \
         --hs_weight_init {hs_weight_init}
-
-This will train a ResNet model and save its checkpoints and TensorBoard training logs
-to a subdirectory of `out_dir`.
 '''
 import json
 import os
-import pickle
 from pprint import pprint
 import time
 from typing import Any, Dict, List, Optional
 
-from batchers import batcher, dataset_constants
+from batchers import batcher, tfrecord_paths_utils
 from models.resnet_model import Hyperspectral_Resnet
 from utils.run import get_full_experiment_name
 from utils.trainer import RegressionTrainer
@@ -43,7 +41,6 @@ ROOT_DIR = os.path.dirname(__file__)  # folder containing this file
 
 def run_training(sess: tf.Session,
                  ooc: bool,
-                 batcher_type: str,
                  dataset: str,
                  keep_frac: float,
                  model_name: str,
@@ -70,8 +67,7 @@ def run_training(sess: tf.Session,
     Args
     - sess: tf.Session
     - ooc: bool, whether to use out-of-country split
-    - batcher_type: str, type of batcher, one of ['base', 'urban', 'rural']
-    - dataset: str, options depends on batcher_type
+    - dataset: str
     - keep_frac: float
     - model_name: str, currently only 'resnet' is supported
     - model_params: dict
@@ -109,48 +105,26 @@ def run_training(sess: tf.Session,
     #       BATCHERS
     # ====================
     if ooc:  # out-of-country split
-        train_tfrecord_paths = np.asarray(batcher.get_tfrecord_paths(dataset, 'train'))
-        val_tfrecord_paths = np.asarray(batcher.get_tfrecord_paths(dataset, 'val'))
-
-        sizes = {
-            'base': dataset_constants.SIZES[dataset],
-            'urban': dataset_constants.URBAN_SIZES[dataset],
-            'rural': dataset_constants.RURAL_SIZES[dataset],
-        }[batcher_type]
-
-        assert len(train_tfrecord_paths) == sizes['train']
-        assert len(val_tfrecord_paths) == sizes['val']
+        if 'dhs' in dataset.lower():
+            train_tfrecord_paths = tfrecord_paths_utils.dhs_ooc(dataset, split='train')
+            val_tfrecord_paths = tfrecord_paths_utils.dhs_ooc(dataset, split='val')
+        else:
+            raise ValueError('out-of-country w/ LSMS is not currently supported')
 
     else:  # in-country split
-        if batcher_type != 'base':
-            raise ValueError('incountry w/ non-base batcher is not supported')
+        if 'dhs' in dataset.lower():
+            paths = tfrecord_paths_utils.dhs_incountry(dataset, splits=['train', 'val'])
+        if 'lsms' in dataset.lower():
+            paths = tfrecord_paths_utils.lsms_incountry(dataset, splits=['train', 'val'])
 
-        # This is a little hacky, because it assumes that the list of TFRecord
-        # paths returned matches the order of the DHS clusters in
-        # `data/dhs_clusters.csv`. We know this to be true because both are
-        # sorted by the survey country_year, and the order of clusters within a
-        # survey are consistent. (The Google Earth Engine TFRecord export
-        # script preserves ordering within each survey.)
-        all_tfrecord_paths = np.asarray(batcher.get_tfrecord_paths('DHS', 'all'))
-        with open(os.path.join(ROOT_DIR, 'data/dhs_incountry_folds.pkl'), 'rb') as f:
-            incountry_folds = pickle.load(f)
-        assert len(all_tfrecord_paths) == dataset_constants.SIZES[dataset]['all']
-
-        fold = dataset[-1]  # last letter of dataset
-        train_indices = incountry_folds[fold]['train']
-        val_indices = incountry_folds[fold]['val']
-
-        train_tfrecord_paths = all_tfrecord_paths[train_indices]
-        val_tfrecord_paths = all_tfrecord_paths[val_indices]
+        train_tfrecord_paths = paths['train']
+        val_tfrecord_paths = paths['val']
 
     num_train = len(train_tfrecord_paths)
     num_val = len(val_tfrecord_paths)
 
     # keep_frac affects sizes of both training and validation sets
     if keep_frac < 1.0:
-        if batcher_type != 'base':
-            raise ValueError('keep_frac < 1.0 w/ non-base batcher is not supported')
-
         num_train = int(num_train * keep_frac)
         num_val = int(num_val * keep_frac)
 
@@ -167,20 +141,14 @@ def run_training(sess: tf.Session,
 
     def get_batcher(tfrecord_paths: tf.Tensor, shuffle: bool, augment: bool,
                     epochs: int, cache: bool) -> batcher.Batcher:
-        BatcherClass = {
-            'base': batcher.Batcher,
-            'urban': batcher.UrbanBatcher,
-            'rural': batcher.RuralBatcher,
-        }[batcher_type]
-
-        return BatcherClass(
+        return batcher.Batcher(
             tfrecord_files=tfrecord_paths,
             label_name=label_name,
             ls_bands=ls_bands,
             nl_band=nl_band,
             batch_size=batch_size,
             epochs=epochs,
-            normalize='DHS',
+            normalize='DHS',  # TODO
             shuffle=shuffle,
             augment=augment,
             clipneg=True,
@@ -321,7 +289,6 @@ def run_training_wrapper(**params: Any) -> None:
     run_training(
         sess=sess,
         ooc=params['ooc'],
-        batcher_type=params['batcher_type'],
         dataset=params['dataset'],
         keep_frac=params['keep_frac'],
         model_name=params['model_name'],
@@ -387,8 +354,7 @@ if __name__ == '__main__':
     flags.DEFINE_integer('num_layers', 18, 'Number of ResNet layers, one of [18, 34, 50]')
 
     # data params
-    flags.DEFINE_string('batcher_type', 'base', 'batcher, one of ["base", "urban", "rural"]')
-    flags.DEFINE_string('dataset', 'DHS_A', 'dataset to use, options depend on batcher_type')  # TODO
+    flags.DEFINE_string('dataset', 'DHS_OOC_A', 'dataset to use')  # TODO
     flags.DEFINE_boolean('ooc', True, 'whether to use out-of-country split')
     flags.DEFINE_float('keep_frac', 1.0, 'fraction of training data to use (default 1.0 uses all data)')
     flags.DEFINE_string('ls_bands', None, 'Landsat bands to use, one of [None (default), "rgb", "ms"]')

@@ -2,14 +2,13 @@
 This file trains ResNet-18 CNN models for estimating nightlights given
 multi-spectral daytime satellite imagery.
 '''
-from glob import glob
 import json
 import os
 from pprint import pprint
 import time
 from typing import Any, Dict, List, Optional
 
-from batchers import batcher, dataset_constants
+from batchers import batcher, tfrecord_paths_utils
 from models.base_model import BaseModel
 from models.resnet_model import Hyperspectral_Resnet
 from utils.run import get_full_experiment_name
@@ -68,9 +67,9 @@ def run_training(sess: tf.Session,
     - hs_weight_init: str, one of [None, 'random', 'same', 'samescaled']
     - exclude_final_layer: bool, or None
     '''
-    ####################################
-    #          ERROR CHECKING          #
-    ####################################
+    # ====================
+    #    ERROR CHECKING
+    # ====================
     assert os.path.exists(out_dir)
 
     if model_name == 'resnet':
@@ -78,17 +77,30 @@ def run_training(sess: tf.Session,
     else:
         raise ValueError('Unknown model_name. Only "resnet" model currently supported.')
 
-    ##############################
-    #          BATCHERS          #
-    ##############################
-    tfrecord_files_glob = os.path.join(batcher.DHSNL_TFRECORDS_PATH_ROOT, '*', '*.tfrecord.gz')
-    all_tfrecord_files = np.sort(glob(tfrecord_files_glob))
-    assert len(all_tfrecord_files) == dataset_constants.SIZES[dataset]['all']
+    # ====================
+    #       BATCHER
+    # ====================
+    all_tfrecord_paths = tfrecord_paths_utils.dhsnl()
+    num_train = int(len(all_tfrecord_paths) * 0.9)
+    num_val = len(all_tfrecord_paths) - num_train
 
-    def get_batcher(indices: np.ndarray, shuffle: bool, augment: bool,
+    all_indices = np.random.permutation(len(all_tfrecord_paths))
+    train_indices = all_indices[:num_train]
+    val_indices = all_indices[num_train:]
+
+    train_tfrecord_paths = all_tfrecord_paths[train_indices]
+    val_tfrecord_paths = all_tfrecord_paths[val_indices]
+
+    print('num_train:', num_train)
+    print('num_val:', num_val)
+
+    train_steps_per_epoch = int(np.ceil(num_train / batch_size))
+    val_steps_per_epoch = int(np.ceil(num_val / batch_size))
+
+    def get_batcher(tfrecord_paths: tf.Tensor, shuffle: bool, augment: bool,
                     epochs: int, cache: bool) -> batcher.Batcher:
         return batcher.Batcher(
-            tfrecord_files=all_tfrecord_files[indices],
+            tfrecord_files=tfrecord_paths,
             ls_bands=ls_bands,
             nl_label=nl_label,
             batch_size=batch_size,
@@ -100,32 +112,41 @@ def run_training(sess: tf.Session,
             cache=cache,
             num_threads=num_threads)
 
-    all_indices = np.random.permutation(len(all_tfrecord_files))
-    num_train = int(len(all_tfrecord_files) * 0.9)
-    steps_per_epoch = num_train * 1.0 / batch_size
-    train_indices = all_indices[:num_train]
-    val_indices = all_indices[num_train:]
+    train_tfrecord_paths_ph = tf.placeholder(tf.string, shape=[None])
+    val_tfrecord_paths_ph = tf.placeholder(tf.string, shape=[None])
 
     with tf.name_scope('train_batcher'):
-        train_batcher = get_batcher(train_indices, shuffle=True, augment=augment,
-                                    epochs=max_epochs, cache='train' in cache)
+        train_batcher = get_batcher(
+            train_tfrecord_paths_ph,
+            shuffle=True,
+            augment=augment,
+            epochs=max_epochs,
+            cache='train' in cache)
         train_init_iter, train_batch = train_batcher.get_batch()
 
     with tf.name_scope('train_eval_batcher'):
-        # shuffle, because we are sampling from this train_eval batcher to get estimates of
-        # our training mse / r^2 values, instead of evaluating over all of the training set
-        train_eval_batcher = get_batcher(train_indices, shuffle=True, augment=False,
-                                         epochs=max_epochs, cache='train_eval' in cache)
+        # shuffle, because we are sampling from train_eval_batcher to get estimates of
+        # training mse / r^2 values, instead of evaluating over all of the training set
+        train_eval_batcher = get_batcher(
+            train_tfrecord_paths_ph,
+            shuffle=True,
+            augment=False,
+            epochs=max_epochs + 1,  # may need extra epoch at the end of training
+            cache='train_eval' in cache)
         train_eval_init_iter, train_eval_batch = train_eval_batcher.get_batch()
 
     with tf.name_scope('val_batcher'):
-        val_batcher = get_batcher(val_indices, shuffle=False, augment=False,
-                                  epochs=1, cache='val' in cache)
+        val_batcher = get_batcher(
+            val_tfrecord_paths_ph,
+            shuffle=False,
+            augment=False,
+            epochs=max_epochs + 1,  # may need extra epoch at the end of training
+            cache='val' in cache)
         val_init_iter, val_batch = val_batcher.get_batch()
 
-    ###########################
-    #          MODEL          #
-    ###########################
+    # ====================
+    #        MODEL
+    # ====================
     print('Building model...', flush=True)
     model_params['num_outputs'] = 2  # model predicts both DMSP and VIIRS values
 
@@ -154,7 +175,10 @@ def run_training(sess: tf.Session,
         hs_weight_init, False, image_summaries=False)
 
     # initialize the training dataset iterators
-    sess.run([train_init_iter, train_eval_init_iter])
+    sess.run([train_init_iter, train_eval_init_iter, val_init_iter], feed_dict={
+        train_tfrecord_paths_ph: train_tfrecord_paths,
+        val_tfrecord_paths_ph: val_tfrecord_paths
+    })
 
     for epoch in range(max_epochs):
         if epoch % eval_every == 0:
@@ -207,7 +231,7 @@ def run_training_wrapper(**params: Any) -> None:
 
     # Create session
     # - MUST set up os.environ['CUDA_VISIBLE_DEVICES'] before creating the tf.Session object
-    if params['gpu_usage'] == 0: # restrict to CPU only
+    if params['gpu_usage'] == 0:  # restrict to CPU only
         os.environ['CUDA_VISIBLE_DEVICES'] = ''
     else:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(params['gpu'])
