@@ -8,9 +8,13 @@ column          | description
 `year`          | year that the survey started (some surveys lasted more than 1 year)
 `lat`           | latitude coordinate of the cluster, possibly displaced (see [below](#gps-coordinate-displacement))
 `lon`           | longitude coordinate of the cluster, possibly displaced (see [below](#gps-coordinate-displacement))
+`GID_1`         | level 1 administrative region ID
+`GID_2`         | level 2 administrative region ID
 `wealthpooled`  | mean asset wealth index (AWI) of households within the cluster
 `households`    | number of households surveyed in the cluster
 `urban_rural`   | 0 = rural, 1 = urban
+
+The administrative region IDs are taken from the [GADM](https://gadm.org/) v3.6 database. Due to the random displacement of geocoordinates, certain (lat, lon) coordinates do not strictly fall within an administrative region of the country. In these cases, the coordinates were assigned to the closest region. For points in Lesotho, where level 1 administrative regions are not further divided into level 2 administrative regions, the level 2 region ID is set to be the same as the level 1 region ID. For details, see [`other/match_gids.py`](../other/match_gids.py).
 
 The AWI used in the `wealthpooled` index was computed as follows:
 1. Take the PCA of household-level assets from 86 DHS surveys spanning 1994 to 2016. The value of the first principle component is the household-level asset wealth index (AWI).
@@ -38,8 +42,8 @@ column          | description
 `year`          | year that the survey started (some surveys lasted more than 1 year)
 `lat`           | latitude coordinate of the cluster, possibly displaced (see [below](#gps-coordinate-displacement))
 `lon`           | longitude coordinate of the cluster, possibly displaced (see [below](#gps-coordinate-displacement))
-`geolev1`       | administrative level-1 region name
-`geolev2`       | administrative level-2 region name
+`geolev1`       | administrative level-1 region ID
+`geolev2`       | administrative level-2 region ID
 
 
 [**`lsms_diffs.csv`**](./lsms_diffs.csv): This CSV file contains the changes in asset wealth index (AWI) over time for LSMS clusters. Each of the 1,539 rows (excluding the CSV header) represents a cluster across two surveys. The columns are as follows:
@@ -54,8 +58,8 @@ column          | description
 `diff_of_index` | change in cluster-level AWI, see below
 `index_of_diff` | cluster-level index of asset differences, see below
 `households`    | number of households that were included in the calculation of the change in cluster-level AWI
-`geolev1`       | administrative level-1 region name
-`geolev2`       | administrative level-2 region name
+`geolev1`       | administrative level-1 region ID
+`geolev2`       | administrative level-2 region ID
 
 For each pair of years, the `diff_of_index` value for a given cluster *C* is (cluster *C*'s AWI in year `year.y`) - (cluster *C*'s AWI in year `year.x`). Only households that were surveyed in both `year.x` and `year.y` were included in the mean. Here, the cluster-level AWI is computed in a similar fasion as for the DHS surveys, taking the PCA of the household assets and then taking the mean across households.
 
@@ -207,7 +211,7 @@ For more information on the geographic displacement procedure, please consult th
 
 The (lat, lon) coordinates in the CSV files should be read according to the IEEE 32-bit floating point standard. For example, the CSV files can be read using the Python pandas library as follows:
 
-```
+```python
 import pandas as pd
 
 df = pd.read_csv('dhs_clusters.csv', float_precision='high', index_col=False)

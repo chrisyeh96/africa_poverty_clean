@@ -100,6 +100,8 @@ dhs_country_codes=(
 
 for code in ${africa_country_codes[@]}
 do
+    echo "Getting shapefiles for ${code}"
+
     # download ZIP'ed shapefiles from GADM v3.6
     wget "https://biogeo.ucdavis.edu/data/gadm3.6/shp/gadm36_${code}_shp.zip"
 
@@ -112,6 +114,14 @@ do
     if [[ " ${dhs_country_codes[@]} " =~ " ${code} " ]]
     then
         unzip -o "gadm36_${code}_shp.zip" *_2.* -d "gadm36_${code}_shp"
+
+        # if no level-2 admin regions exist, then try unzipping level-1
+        # - this should only apply to Lesotho (LSO)
+        if [ ! -f "./gadm36_${code}_shp/gadm36_${code}_2.shp" ]
+        then
+            echo "- No level-2 admin shapefile exists. Trying level-1."
+            unzip -o "gadm36_${code}_shp.zip" *_1.* -d "gadm36_${code}_shp"
+        fi
     fi
 
     # delete the zip file
