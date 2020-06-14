@@ -1,12 +1,9 @@
-from typing import Any, Mapping, Optional, Tuple, Union
+from typing import Any, Mapping, Optional, Tuple
 
 import ee
 import pandas as pd
 import time
 from tqdm.auto import tqdm
-
-
-Numeric = Union[int, float]
 
 
 def df_to_fc(df: pd.DataFrame, lat_colname: str = 'lat',
@@ -219,7 +216,7 @@ def tfexporter(collection: ee.FeatureCollection, export: str, prefix: str,
 
 
 def sample_patch(point: ee.Feature, patches_array: ee.Image,
-                 scale: Numeric) -> ee.Feature:
+                 scale: float) -> ee.Feature:
     '''Extracts an image patch at a specific point.
 
     Args
@@ -241,8 +238,8 @@ def sample_patch(point: ee.Feature, patches_array: ee.Image,
 
 
 def get_array_patches(img: ee.Image,
-                      scale: Numeric,
-                      ksize: Numeric,
+                      scale: float,
+                      ksize: float,
                       points: ee.FeatureCollection,
                       export: str,
                       prefix: str,

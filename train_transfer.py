@@ -1,6 +1,27 @@
 '''
 This file trains ResNet-18 CNN models for estimating nightlights given
-multi-spectral daytime satellite imagery.
+multi-spectral daytime satellite imagery. Model checkpoints and
+TensorBoard training logs are saved to `out_dir`.
+
+Usage:
+    python train_transfer.py \
+        --model_name resnet --num_layers 18 \
+        --lr_decay 0.96 --batch_size 64 \
+        --gpu 0 --num_threads 5 \
+        --dataset DHS_NL --cache val \
+        --augment True --eval_every 1 --print_every 40 \
+        --max_epochs {max_epochs} \
+        --out_dir {out_dir} \
+        --seed {seed} \
+        --experiment_name {experiment_name} \
+        --ls_bands {ls_bands} --nl_label {nl_label} \
+        --lr {lr} --fc_reg {reg} --conv_reg {reg} \
+        --imagenet_weights_path {imagenet_weights_path} \
+        --hs_weight_init {hs_weight_init}
+
+Prerequisites: download TFRecords, process them, and create incountry folds. See
+    `preprocessing/1_process_tfrecords.ipynb` and
+    `preprocessing/2_create_incountry_folds.ipynb`.
 '''
 import json
 import os
