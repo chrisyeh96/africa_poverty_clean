@@ -1,4 +1,4 @@
-DHS_OOC_COUNTRIES = [
+DHS_COUNTRIES = [
     'angola', 'benin', 'burkina_faso', 'cameroon', 'cote_d_ivoire',
     'democratic_republic_of_congo', 'ethiopia', 'ghana', 'guinea', 'kenya',
     'lesotho', 'malawi', 'mali', 'mozambique', 'nigeria', 'rwanda', 'senegal',
@@ -9,18 +9,6 @@ LSMS_COUNTRIES = ['ethiopia', 'malawi', 'nigeria', 'tanzania', 'uganda']
 _SURVEY_NAMES_5country = {
     'train': ['uganda_2011', 'tanzania_2010', 'rwanda_2010', 'nigeria_2013'],
     'val': ['malawi_2010']
-}
-
-_SURVEY_NAMES_DHS = {
-    'train': ['benin_2012', 'democratic_republic_of_congo_2013', 'guinea_2012', 'kenya_2014',
-              'kenya_2015', 'malawi_2010', 'malawi_2012', 'malawi_2014', 'malawi_2015', 'nigeria_2010',
-              'nigeria_2013', 'nigeria_2015', 'rwanda_2010', 'rwanda_2014', 'senegal_2010',
-              'senegal_2012', 'sierra_leone_2013', 'tanzania_2010', 'tanzania_2011', 'tanzania_2015',
-              'togo_2013', 'uganda_2009', 'uganda_2011', 'uganda_2014', 'zimbabwe_2010', 'zimbabwe_2015'],
-    'val': ['burkina_faso_2010', 'burkina_faso_2014', 'cote_d_ivoire_2012', 'ghana_2014',
-            'ghana_2016', 'lesotho_2009', 'lesotho_2014', 'zambia_2013'],
-    'test': ['angola_2011', 'angola_2015', 'cameroon_2011', 'ethiopia_2010', 'ethiopia_2016',
-             'mali_2012', 'mali_2015', 'mozambique_2009', 'mozambique_2011'],
 }
 
 _SURVEY_NAMES_DHS_OOC_A = {
@@ -61,7 +49,6 @@ _SURVEY_NAMES_DHS_OOC_E = {
 
 SURVEY_NAMES = {  # TODO: rename to SURVEY_NAMES_DHS?
     '5country': _SURVEY_NAMES_5country,  # TODO: is this needed
-    'DHS': _SURVEY_NAMES_DHS,  # TODO: is this needed
     'DHS_OOC_A': _SURVEY_NAMES_DHS_OOC_A,
     'DHS_OOC_B': _SURVEY_NAMES_DHS_OOC_B,
     'DHS_OOC_C': _SURVEY_NAMES_DHS_OOC_C,

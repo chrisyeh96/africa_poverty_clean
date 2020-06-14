@@ -14,6 +14,33 @@ DHSNL_TFRECORDS_PATH_ROOT = os.path.join(ROOT_DIR, 'data/dhsnl_tfrecords')
 LSMS_TFRECORDS_PATH_ROOT = os.path.join(ROOT_DIR, 'data/lsms_tfrecords')
 
 
+def dhs() -> np.ndarray:
+    '''Gets a list of paths to all TFRecord files comprising the DHS dataset.
+
+    Returns: np.array of str, sorted paths to TFRecord files
+    '''
+    return dhs_ooc(split='all', dataset='DHS_OOC_A')
+
+
+def lsms() -> np.ndarray:
+    '''Gets a list of paths to all TFRecord files comprising the LSMS dataset.
+
+    Returns: np.array of str, sorted paths to TFRecord files
+    '''
+    raise NotImplementedError  # TODO
+
+
+def dhsnl() -> np.ndarray:
+    '''Gets a list of paths to all TFRecord files comprising the DHSNL dataset.
+
+    Returns: np.array of str, sorted paths to TFRecord files
+    '''
+    glob_path = os.path.join(DHSNL_TFRECORDS_PATH_ROOT, '*', '*.tfrecord.gz')
+    tfrecord_paths = np.sort(glob(glob_path))
+    # assert len(tfrecord_paths) == SIZES['DHSNL']['all']  # TODO: uncomment this
+    return tfrecord_paths
+
+
 def dhs_ooc(dataset: str, split: str) -> np.ndarray:
     '''Gets a list of paths to TFRecords corresponding to the given split of
     a desired DHS dataset.
@@ -22,8 +49,7 @@ def dhs_ooc(dataset: str, split: str) -> np.ndarray:
     - dataset: str, has format 'DHS_OOC_X' where 'X' is one of ['A', 'B', 'C', 'D', 'E']
     - splits: str, one of ['train', 'val', 'test', 'all']
 
-    Returns:
-    - tfrecord_paths: sorted list of TFRecord paths
+    Returns: np.array of str, sorted paths to TFRecord files
     '''
     if split == 'all':
         splits = ['train', 'val', 'test']
@@ -38,18 +64,6 @@ def dhs_ooc(dataset: str, split: str) -> np.ndarray:
             tfrecord_paths.extend(glob(glob_path))
     tfrecord_paths = np.sort(tfrecord_paths)
     # assert len(tfrecord_paths) == SIZES[dataset][split]  # TODO: uncomment this
-    return tfrecord_paths
-
-
-def dhsnl() -> np.ndarray:
-    '''Gets a list of paths to TFRecord files comprising the DHSNL dataset.
-
-    Returns:
-    - tfrecord_paths: np.array of str, paths to TFRecord files, sorted
-    '''
-    glob_path = os.path.join(DHSNL_TFRECORDS_PATH_ROOT, '*', '*.tfrecord.gz')
-    tfrecord_paths = np.sort(glob(glob_path))
-    # assert len(tfrecord_paths) == SIZES['DHSNL']['all']  # TODO: uncomment this
     return tfrecord_paths
 
 
@@ -133,8 +147,7 @@ def dhs_incountry(dataset: str, splits: Iterable[str]) -> Dict[str, np.ndarray]:
                       folds_pickle_path=folds_pickle_path)
 
 
-def lsms_incountry(dataset: str, splits: Iterable[str]
-                   ) -> Dict[str, np.ndarray]:
+def lsms_incountry(dataset: str, splits: Iterable[str]) -> Dict[str, np.ndarray]:
     '''
     Args
     - dataset: str, has format 'LSMS_incountry_X' where 'X' is one of
