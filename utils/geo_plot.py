@@ -63,8 +63,8 @@ def setup_ax(fig: matplotlib.figure.Figure,
 
     ax.set_aspect('equal')
     gridliner = ax.gridlines(draw_labels=True)
-    gridliner.xlabels_top = False
-    gridliner.ylabels_right = False
+    gridliner.top_labels = False
+    gridliner.right_labels = False
     return ax
 
 

@@ -47,18 +47,17 @@ def merge_df_shp(df: pd.DataFrame, shp_path: str, level: int = 2) -> gpd.GeoData
     return merged
 
 
-def match_dhs_gids():
-    sort_cols = ['country', 'year', 'lat', 'lon']
-
+def match_dhs_gids() -> None:
     cross_path = '../data/surveys/crosswalk_countries.csv'
     cross = pd.read_csv(cross_path)
     cross = cross.loc[cross.country_pred.notna(), ['iso3', 'country_pred']]
     country_to_iso3 = cross.set_index('country_pred')['iso3'].to_dict()
 
+    dhs_orig_cols = ['country', 'year', 'lat', 'lon', 'wealthpooled', 'households', 'urban_rural']
+
     dhs_path = '../data/dhs_clusters.csv'
-    dhs = pd.read_csv(dhs_path, float_precision='high')
-    dhs.sort_values(sort_cols, inplace=True)
-    dhs = dhs[['country', 'year', 'lat', 'lon', 'wealthpooled', 'households', 'urban_rural']]
+    dhs = pd.read_csv(dhs_path, index_col=False, float_precision='high')
+    dhs = dhs[dhs_orig_cols]
 
     shp2_path_template = '../data/shapefiles/gadm36_{iso3}_shp/gadm36_{iso3}_2.shp'
     shp1_path_template = '../data/shapefiles/gadm36_{iso3}_shp/gadm36_{iso3}_1.shp'
@@ -79,13 +78,15 @@ def match_dhs_gids():
         country_df = merge_df_shp(df=country_df, shp_path=shp_path, level=level)
         country_dfs.append(country_df)
 
-    dhs = pd.concat(country_dfs).sort_values(sort_cols)
-    dhs = dhs[['country', 'year', 'lat', 'lon', 'GID_1', 'GID_2', 'wealthpooled', 'households', 'urban_rural']]
+    dhs_geo = pd.concat(country_dfs).sort_index()
+    dhs_geo = dhs_geo[['country', 'year', 'lat', 'lon', 'GID_1', 'GID_2', 'wealthpooled', 'households', 'urban_rural']]
 
     # for Lesotho, which doesn't have level-2 regions, set the level-2 ID to be the level-1 ID
-    dhs.loc[dhs.GID_2.isna(), 'GID_2'] = dhs.loc[dhs.GID_2.isna(), 'GID_1']
+    dhs_geo.loc[dhs_geo.GID_2.isna(), 'GID_2'] = dhs_geo.loc[dhs_geo.GID_2.isna(), 'GID_1']
 
-    dhs.to_csv(dhs_path, index=False)
+    assert dhs_geo[dhs_orig_cols].equals(dhs)
+
+    dhs_geo.to_csv(dhs_path, index=False)
 
 
 if __name__ == '__main__':
