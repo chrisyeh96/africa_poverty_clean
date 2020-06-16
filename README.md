@@ -22,6 +22,7 @@ Please cite this article as follows, or use the BibTeX entry below.
 }
 ```
 
+For a list of known errata discovered since the paper was published, please consult the [errata.md](https://github.com/sustainlab-group/africa_poverty/tree/master/errata.md) file. To the best of our knowledge, the errata do not affect the main findings of the paper.
 
 ## Hardware and Software Requirements
 
