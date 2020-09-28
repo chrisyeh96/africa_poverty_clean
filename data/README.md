@@ -1,3 +1,37 @@
+## Table of Contents
+
+* [Folder structure](#folder-structure)
+* [CSV Files](#csv-files)
+* [Python Pickle (`.pkl`) Files](#python-pickle-pkl-files)
+* [Files in `data/overpass/`](#files-in-dataoverpass)
+* [Files in `data/survey/`](#files-in-datasurvey)
+* [GPS coordinate displacement](#gps-coordinate-displacement)
+* [Other notes about the data files](#other-notes-about-the-data-files)
+
+
+## Folder structure
+
+```
+dhs_tfrecords/          # created by preprocessing/1_process_tfrecords.ipynb
+    angola_2011/
+    ...
+    zimbabwe_2015/
+dhs_tfrecords_raw/      # created by preprocessing/0_export_tfrecords.ipynb
+dhsnl_tfrecords/        # created by preprocessing/1_process_tfrecords.ipynb
+    angola_2010/
+    ...
+    zimbabwe_2016/
+dhsnl_tfrecords_raw/    # created by preprocessing/0_export_tfrecords.ipynb
+lsms_tfrecords/         # created by preprocessing/1_process_tfrecords.ipynb
+    ethiopia_2011/
+    ...
+    uganda_2013/
+lsms_tfrecords_raw/     # created by preprocessing/0_export_tfrecords.ipynb
+overpass/
+shapefiles/             # created by preprocessing/3_download_gadm_shapefiles.sh
+surveys/
+```
+
 ## CSV Files
 
 [**`dhs_clusters.csv`**](./dhs_clusters.csv): This CSV file contains data derived from DHS surveys, aggregated to the cluster level. Each of the 19,669 rows (excluding the CSV header) represents a cluster from a single survey. The columns are as follows:

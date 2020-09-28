@@ -24,7 +24,15 @@ Please cite this article as follows, or use the BibTeX entry below.
 
 For a list of known errata discovered since the paper was published, please consult the [errata.md](https://github.com/sustainlab-group/africa_poverty/tree/master/errata.md) file. To the best of our knowledge, the errata do not affect the main findings of the paper.
 
-## Hardware and Software Requirements
+
+## Table of Contents
+
+* [Computing Requirements](#computing-requirements)
+* [Running trained models](#running-trained-models)
+* [Training DHS models](#training-dhs-models)
+
+
+## Computing Requirements
 
 This code was tested on a system with the following specifications:
 
@@ -43,12 +51,16 @@ conda env create -f env.yml
 If you are using a GPU, you may need to also install CUDA 10 and cuDNN 7.
 
 
-## Instructions
+## Running trained models
+
+Follow the numbered files in the `preprocessing/` directory to download the necessary satellite images and shapefiles.
 
 TODO
 
 
 ## Training DHS models
+
+Follow the numbered files in the `preprocessing/` directory to download the necessary satellite images and shapefiles.
 
 The generic script for training ResNet-18 models for predicting DHS asset-wealth is as follows:
 
@@ -83,7 +95,7 @@ Setting      | "out-of-country"     | "in-country"
 -------------|----------------------|-------------
 `max_epochs` | 200                  | 150
 `ooc`        | `True`               | `False`
-`out_dir`    | `./outputs/DHS_OOC/` | `./outputs/DHS_Incountry/`
+`out_dir`    | `./outputs/dhs_ooc/` | `./outputs/dhs_incountry/`
 
 Settings for different CNN models:
 
@@ -121,7 +133,7 @@ python train_dhs.py \
     --cache train,train_eval,val \
     --augment True --eval_every 1 --print_every 40 \
     --ooc True --max_epochs 200 \
-    --out_dir ./outputs/DHS_OOC/ \
+    --out_dir ./outputs/dhs_ooc/ \
     --keep_frac 0.25 --seed 456 \
     --experiment_name DHS_OOC_D_ms_samescaled_keep0.25_seed456 \
     --dataset DHS_OOC_D \
