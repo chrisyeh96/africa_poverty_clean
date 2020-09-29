@@ -2,14 +2,10 @@
 
 import tensorflow as tf
 
-FLAGS = tf.app.flags.FLAGS
-
 
 class Config:
     def __init__(self):
         root = self.Scope('')
-        for key in dir(FLAGS):
-            root[key] = FLAGS.__getattr__(key)
         self.stack = [root]
 
     def items(self):

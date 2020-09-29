@@ -1,7 +1,7 @@
 from collections import defaultdict
 from glob import glob
 import os
-import time
+from tqdm.auto import tqdm
 from typing import Any, Callable, DefaultDict, Dict, Iterable, Mapping, Optional
 
 import numpy as np
@@ -121,8 +121,7 @@ def print_number_of_parameters(verbose: bool = True) -> None:
 
 
 def run_batches(sess: tf.Session, tensors_dict_ops: Mapping[str, tf.Tensor],
-                max_nbatches: int = -1, verbose: bool = False
-                ) -> Dict[str, np.ndarray]:
+                max_nbatches: int = -1) -> Dict[str, np.ndarray]:
     '''Runs the ops in tensors_dict_ops for a fixed number of batches or until
     reaching a tf.errors.OutOfRangeError, concatenating the runs.
 
@@ -134,30 +133,26 @@ def run_batches(sess: tf.Session, tensors_dict_ops: Mapping[str, tf.Tensor],
     - tensors_dict_ops: dict, str => tf.Tensor, shape [batch_size] or [batch_size, D]
     - max_nbatches: int, maximum number of batches to run the ops for,
         set to -1 to run until reaching a tf.errors.OutOfRangeError
-    - verbose: bool, whether to print out current batch and speed
 
     Returns
     - all_tensors: dict, str => np.array, shape [N] or [N, D]
     '''
     all_tensors = defaultdict(list)  # type: DefaultDict[str, Any]
     curr_batch = 0
-    start_time = time.time()
+    progbar = tqdm(total=max_nbatches if max_nbatches > 0 else None)
     try:
         while True:
             tensors_dict = sess.run(tensors_dict_ops)
             for name, arr in tensors_dict.items():
                 all_tensors[name].append(arr)
             curr_batch += 1
-            if verbose:
-                speed = curr_batch / (time.time() - start_time)
-                print(f'\rRan {curr_batch} batches ({speed:.3f} batch/s)',
-                      end='')
+            progbar.update(1)
             if curr_batch >= max_nbatches:
                 break
     except tf.errors.OutOfRangeError:
         pass
 
-    print()  # print a newline because previous print()'s don't print newlines
+    progbar.close()
     for name in all_tensors:
         all_tensors[name] = np.concatenate(all_tensors[name])
     return all_tensors
@@ -207,7 +202,7 @@ def check_existing(model_dirs: Iterable[str], outputs_root_dir: str,
 
         # check that checkpoint exists
         ckpt_glob = os.path.join(model_dir, 'ckpt-*')
-        if len(glob(ckpt_glob)) > 0:
+        if len(glob(ckpt_glob)) == 0:
             ret = False
             print(f'did not find checkpoint matching: {ckpt_glob}')
 
@@ -280,7 +275,6 @@ def run_extraction_on_models(model_dirs: Iterable[str],
 
             # run the saved model, then save to *.npz files
             all_tensors = run_batches(
-                sess, tensors_dict_ops, max_nbatches=batches_per_epoch,
-                verbose=True)
+                sess, tensors_dict_ops, max_nbatches=batches_per_epoch)
             save_results(
                 dir_path=out_dir, np_dict=all_tensors, filename=save_filename)

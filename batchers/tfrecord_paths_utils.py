@@ -58,11 +58,11 @@ def dhs_ooc(dataset: str, split: str) -> np.ndarray:
 
     survey_names = SURVEY_NAMES[dataset]
     tfrecord_paths = []
-    for split in splits:
-        for country_year in survey_names[split]:
+    for s in splits:
+        for country_year in survey_names[s]:
             glob_path = os.path.join(
                 DHS_TFRECORDS_PATH_ROOT, country_year + '*', '*.tfrecord.gz')
-            tfrecord_paths.extend(glob(glob_path))
+            tfrecord_paths += glob(glob_path)
     assert len(tfrecord_paths) == SIZES[dataset][split]
     return np.sort(tfrecord_paths)
 

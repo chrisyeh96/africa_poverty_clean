@@ -62,11 +62,11 @@ MODEL_PARAMS = {
 # ====================
 
 
-def get_model_class(model_type: str) -> Callable:
-    if model_type == 'resnet':
+def get_model_class(model_arch: str) -> Callable:
+    if model_arch == 'resnet':
         model_class = Hyperspectral_Resnet
     else:
-        raise ValueError('Unknown model_type. Currently only "resnet" is supported.')
+        raise ValueError('Unknown model_arch. Currently only "resnet" is supported.')
     return model_class
 
 
@@ -74,7 +74,7 @@ def get_batcher(dataset: str, ls_bands: str, nl_band: str, num_epochs: int,
                 cache: bool) -> Tuple[batcher.Batcher, int, Dict[Any, Any]]:
     '''
     Args
-    - dataset: str, one of ['DHS', 'LSMS'] # TODO
+    - dataset: str, one of ['dhs', 'lsms'] # TODO
     - ls_bands: one of [None, 'ms', 'rgb']
     - nl_band: one of [None, 'merge', 'split']
     - num_epochs: int
@@ -85,9 +85,9 @@ def get_batcher(dataset: str, ls_bands: str, nl_band: str, num_epochs: int,
     - size: int, length of dataset
     - feed_dict: dict, feed_dict for initializing the dataset iterator
     '''
-    if dataset == 'DHS':
+    if dataset == 'dhs':
         tfrecord_paths = tfrecord_paths_utils.dhs()
-    elif dataset == 'LSMS':  # LSMS, TODO
+    elif dataset == 'lsms':  # TODO
         tfrecord_paths = tfrecord_paths_utils.lsms()
     else:
         raise ValueError(f'dataset={dataset} is unsupported')
@@ -96,7 +96,7 @@ def get_batcher(dataset: str, ls_bands: str, nl_band: str, num_epochs: int,
     tfrecord_paths_ph = tf.placeholder(tf.string, shape=[size])
     feed_dict = {tfrecord_paths_ph: tfrecord_paths}
 
-    if dataset == 'DHS':
+    if dataset == 'dhs':
         b = batcher.Batcher(
             tfrecord_files=tfrecord_paths_ph,
             label_name='wealthpooled',
@@ -142,8 +142,8 @@ def main() -> None:
             print('Stopping')
             return
 
-    # group models by batcher configuration and model_type, where
-    #   config = (dataset, ls_bands, nl_band, model_type)
+    # group models by batcher configuration and model_arch, where
+    #   config = (dataset, ls_bands, nl_band, model_arch)
     all_models = {'dhs': DHS_MODELS, 'lsms': LSMS_MODELS}
     ModelsByConfigType = Dict[
         Tuple[str, Optional[str], Optional[str], str],
@@ -152,19 +152,19 @@ def main() -> None:
     models_by_config: ModelsByConfigType = defaultdict(list)
     for dataset, model_dirs in all_models.items():
         for model_dir in model_dirs:
-            ls_bands, nl_band, model_type = read_params_json(
+            ls_bands, nl_band, model_arch = read_params_json(
                 model_dir=os.path.join(OUTPUTS_ROOT_DIR, model_dir),
-                keys=['ls_bands', 'nl_band', 'model_type'])
-            config = (dataset, ls_bands, nl_band, model_type)
+                keys=['ls_bands', 'nl_band', 'model_name'])
+            config = (dataset, ls_bands, nl_band, model_arch)
             models_by_config[config].append(model_dir)
 
     for config, model_dirs in models_by_config.items():
-        dataset, ls_bands, nl_band, model_type = config
+        dataset, ls_bands, nl_band, model_arch = config
         print('====== Current Config: ======')
         print('- dataset:', dataset)
         print('- ls_bands:', ls_bands)
         print('- nl_band:', nl_band)
-        print('- model_type:', model_type)
+        print('- model_arch:', model_arch)
         print('- number of models:', len(model_dirs))
         print()
 
@@ -175,7 +175,7 @@ def main() -> None:
 
         run_extraction_on_models(
             model_dirs,
-            ModelClass=get_model_class(model_type),
+            ModelClass=get_model_class(model_arch),
             model_params=MODEL_PARAMS,
             batcher=b,
             batches_per_epoch=batches_per_epoch,

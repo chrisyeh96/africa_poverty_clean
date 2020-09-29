@@ -271,8 +271,7 @@ class BaseTrainer(metaclass=ABCMeta):
         all_tensors = run_batches(
             sess=self.sess,
             tensors_dict_ops=tensors_dict_ops,
-            max_nbatches=max_nbatches,
-            verbose=True)
+            max_nbatches=max_nbatches)
         speed = len(all_tensors['preds']) / (time.time() - start_time)
         print(f'... Finished {split} set. Completed at {speed:.3f} images / s')
         self.results.loc[(self.epoch, split), :] = self.evaluate_preds(
