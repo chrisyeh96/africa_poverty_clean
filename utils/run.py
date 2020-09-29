@@ -152,7 +152,7 @@ def run_batches(sess: tf.Session, tensors_dict_ops: Mapping[str, tf.Tensor],
     except tf.errors.OutOfRangeError:
         pass
 
-    print()  # print a newline, since the previous print()'s don't print newlines
+    print()  # print a newline because previous print()'s don't print newlines
     for name in all_tensors:
         all_tensors[name] = np.concatenate(all_tensors[name])
     return all_tensors
@@ -212,33 +212,33 @@ def check_existing(model_dirs: Iterable[str], outputs_root_dir: str, test_filena
     return ret
 
 
-def run_extraction_on_models(model_infos: List[Mapping],
+def run_extraction_on_models(model_dirs: Iterable[str],
                              ModelClass: Any,
                              model_params: Mapping,
                              batcher: batcher.Batcher,
                              batches_per_epoch: int,
-                             logs_root_dir: str, ckpts_root_dir: str,
+                             out_root_dir: str,
                              save_filename: str,
                              batch_keys: Iterable[str] = (),
                              feed_dict: Mapping[tf.Tensor, Any] = None
                              ) -> None:
-    '''TODO
+    '''Runs feature extraction on the given models, and saves the extracted
+    features as a compressed numpy .npz file.
 
     Args
-    - model_infos: list of dict
-        - 'model_dir': str, name of folder where model is saved
-        - 'bands': tuple
-    - ModelClass: class, an instance `model` of ModelClass has attributes
+    - model_dirs: list of str, names of folders where models are saved
+    - ModelClass: class, an instance `model` of ModelClass which has attributes
         model.features_layer: tf.Tensor
         model.outputs: tf.Tensor
     - model_params: dict, parameters to pass to ModelClass constructor
     - batcher: Batcher, whose batch_op includes 'images' key
     - batches_per_epoch: int
-    - logs_root_dir: str, path to root directory for saving logs
-    - ckpts_root_dir: str, path to root directory for saving checkpoints
+    - out_root_dir: str, path to main directory where all model checkpoints and
+        TensorBoard logs are saved
     - save_filename: str, name of file to save
     - batch_keys: list of str
-    - feed_dict: dict, tf.Tensor => python value, feed_dict for initializing batcher iterator
+    - feed_dict: dict, tf.Tensor => python value, feed_dict for initializing
+        batcher iterator
     '''
     print('Building model...')
     init_iter, batch_op = batcher.get_batch()
@@ -260,17 +260,15 @@ def run_extraction_on_models(model_infos: List[Mapping],
     with tf.Session(config=config_proto) as sess:
         sess.run(init_iter, feed_dict=feed_dict)
 
-        for model_info in model_infos:
-            model_dir = model_info['model_dir']
-            ckpt_dir = os.path.join(ckpts_root_dir, model_dir)
-            logs_dir = os.path.join(logs_root_dir, model_dir)
+        for model_dir in model_dirs:
+            out_dir = os.path.join(out_root_dir, model_dir)
 
             # clear the model weights, then load saved checkpoint
             print('Loading saved ckpt...')
             sess.run(var_init_ops)
-            load(sess, saver, ckpt_dir)
+            load(sess, saver, out_dir)
 
             # run the saved model, then save to *.npz files
             all_tensors = run_batches(
                 sess, tensors_dict_ops, max_nbatches=batches_per_epoch, verbose=True)
-            save_results(dir_path=logs_dir, np_dict=all_tensors, filename=save_filename)
+            save_results(dir_path=out_dir, np_dict=all_tensors, filename=save_filename)

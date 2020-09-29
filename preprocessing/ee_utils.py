@@ -8,7 +8,8 @@ from tqdm.auto import tqdm
 
 def df_to_fc(df: pd.DataFrame, lat_colname: str = 'lat',
              lon_colname: str = 'lon') -> ee.FeatureCollection:
-    '''
+    '''Create a ee.FeatureCollection from a pd.DataFrame.
+
     Args
     - csv_path: str, path to CSV file that includes at least two columns for
         latitude and longitude coordinates
@@ -55,8 +56,8 @@ def surveyyear_to_range(survey_year: int, nl: bool = False) -> Tuple[str, str]:
     - nl: bool, whether to use special range for night lights
 
     Returns
-    - start_date: str, represents start date for filtering satellite images
-    - end_date: str, represents end date for filtering satellite images
+    - start_date: str, start date for filtering satellite images (yyyy-mm-dd)
+    - end_date: str, end date for filtering satellite images (yyyy-mm-dd)
     '''
     if 2003 <= survey_year and survey_year <= 2005:
         start_date = '2003-1-1'
@@ -121,7 +122,7 @@ def decode_qamask(img: ee.Image) -> ee.Image:
 def mask_qaclear(img: ee.Image) -> ee.Image:
     '''
     Args
-    - img: ee.Image
+    - img: ee.Image, Landsat 5/7/8 image containing 'pixel_qa' band
 
     Returns
     - img: ee.Image, input image with cloud-shadow, snow, cloud, and unclear
