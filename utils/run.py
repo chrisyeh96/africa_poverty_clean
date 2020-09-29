@@ -2,7 +2,7 @@ from collections import defaultdict
 from glob import glob
 import os
 import time
-from typing import Any, DefaultDict, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Callable, DefaultDict, Dict, Iterable, Mapping, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -41,7 +41,8 @@ def get_full_experiment_name(experiment_name: str, batch_size: int,
     fc_str = param_to_str(fc_reg)
     conv_str = param_to_str(conv_reg)
     lr_str = param_to_str(lr)
-    full_experiment_name = f'{experiment_name}_b{batch_size}_fc{fc_str}_conv{conv_str}_lr{lr_str}'
+    full_experiment_name = (
+        f'{experiment_name}_b{batch_size}_fc{fc_str}_conv{conv_str}_lr{lr_str}')
 
     if tag is not None:
         full_experiment_name += f'_{tag}'
@@ -50,7 +51,8 @@ def get_full_experiment_name(experiment_name: str, batch_size: int,
 
 
 def checkpoint_path_exists(ckpt_path: str) -> bool:
-    '''Checks whether a TensorFlow modeol checkpoint exists at the given path.'''
+    '''Checks whether a TensorFlow modeol checkpoint exists at the given path.
+    '''
     if ckpt_path[-6:] == '.index':
         ckpt_path = ckpt_path[-6:]
     if ckpt_path[-5:] == '.meta':
@@ -70,7 +72,7 @@ def load(sess: tf.Session, saver: tf.train.Saver, checkpoint_dir: str) -> bool:
     - saver: tf.train.Saver
     - checkpoint_dir: str, path to directory containing checkpoint(s)
 
-    Returns: bool, True if successful at restoring checkpoint from given directory
+    Returns: bool, True if successful at restoring checkpoint from given dir
     '''
     print(f'Reading from checkpoint dir: {checkpoint_dir}')
     if checkpoint_dir is None:
@@ -78,14 +80,15 @@ def load(sess: tf.Session, saver: tf.train.Saver, checkpoint_dir: str) -> bool:
     if not os.path.isdir(checkpoint_dir):
         raise ValueError('Given path is not a valid directory.')
 
-    # read the CheckpointState proto from the 'checkpoint' file in checkpoint_dir
+    # read the CheckpointState proto from 'checkpoint' file in checkpoint_dir
     ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
     if ckpt and ckpt.model_checkpoint_path:
         ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
         print(f'Loading checkpoint: {ckpt_name}')
         if not checkpoint_path_exists(ckpt.model_checkpoint_path):
-            raise LoadNoFileError('Checkpoint could not be loaded because it does not exist,'
-                                  ' but its information is in the checkpoint meta-data file.')
+            raise LoadNoFileError(
+                'Checkpoint could not be loaded because it does not exist,'
+                ' but its information is in the checkpoint meta-data file.')
         saver.restore(sess, ckpt.model_checkpoint_path)
         return True
     return False
@@ -95,10 +98,10 @@ def print_number_of_parameters(verbose: bool = True) -> None:
     '''Prints the total number of trainable parameters.
 
     Args
-    - verbose: bool, whether to print name and shape info for every trainable var
+    - verbose: bool, whether to print name & shape info for every trainable var
     '''
     total_parameters = 0  # total # of trainable params in the current graph
-    num_none_vars = 0  # num variables in the graph with a shape that is not fully defined
+    num_none_vars = 0  # variables in graph with shape that is not fully defined
 
     for variable in tf.trainable_variables():
         name = variable.name
@@ -106,7 +109,8 @@ def print_number_of_parameters(verbose: bool = True) -> None:
         num_params = np.prod(variable.shape).value
 
         if verbose:
-            print(f'Variable name: {name}, shape: {shape}, num_params: {num_params}')
+            print(f'Variable name: {name}, shape: {shape}, '
+                  f'num_params: {num_params}')
 
         if num_params is None:
             num_none_vars += 1
@@ -146,7 +150,8 @@ def run_batches(sess: tf.Session, tensors_dict_ops: Mapping[str, tf.Tensor],
             curr_batch += 1
             if verbose:
                 speed = curr_batch / (time.time() - start_time)
-                print(f'\rRan {curr_batch} batches ({speed:.3f} batch/s)', end='')
+                print(f'\rRan {curr_batch} batches ({speed:.3f} batch/s)',
+                      end='')
             if curr_batch >= max_nbatches:
                 break
     except tf.errors.OutOfRangeError:
@@ -178,7 +183,8 @@ def save_results(dir_path: str, np_dict: dict, filename: str = 'features.npz'
     np.savez_compressed(npz_path, **np_dict)
 
 
-def check_existing(model_dirs: Iterable[str], outputs_root_dir: str, test_filename: str) -> bool:
+def check_existing(model_dirs: Iterable[str], outputs_root_dir: str,
+                   test_filename: str) -> bool:
     '''Checks a list of model directories to ensure that they contain model
     checkpoints but not a given filename.
 
@@ -188,10 +194,12 @@ def check_existing(model_dirs: Iterable[str], outputs_root_dir: str, test_filena
 
     Args
     - model_dirs: list of str, model directories within outputs_root_dir
-    - outputs_root_dir: str, path to root directory for saving logs and checkpoints
+    - outputs_root_dir: str, path to root directory for saving logs and
+        checkpoints
     - test_filename: str, name of file to check for
 
-    Returns: bool, True if ckpts exist and no test_filename files found, otherwise False
+    Returns: bool, True if ckpts exist and no test_filename files found,
+        otherwise False
     '''
     ret = True
     for model_dir in model_dirs:
@@ -213,7 +221,7 @@ def check_existing(model_dirs: Iterable[str], outputs_root_dir: str, test_filena
 
 
 def run_extraction_on_models(model_dirs: Iterable[str],
-                             ModelClass: Any,
+                             ModelClass: Callable,
                              model_params: Mapping,
                              batcher: batcher.Batcher,
                              batches_per_epoch: int,
@@ -226,7 +234,8 @@ def run_extraction_on_models(model_dirs: Iterable[str],
     features as a compressed numpy .npz file.
 
     Args
-    - model_dirs: list of str, names of folders where models are saved
+    - model_dirs: list of str, names of folders where models are saved, should
+        be subfolders of out_root_dir
     - ModelClass: class, an instance `model` of ModelClass which has attributes
         model.features_layer: tf.Tensor
         model.outputs: tf.Tensor
@@ -252,7 +261,8 @@ def run_extraction_on_models(model_dirs: Iterable[str],
             tensors_dict_ops[key] = batch_op[key]
 
     saver = tf.train.Saver(var_list=None)
-    var_init_ops = [tf.global_variables_initializer(), tf.local_variables_initializer()]
+    var_init_ops = [tf.global_variables_initializer(),
+                    tf.local_variables_initializer()]
 
     print('Creating session...')
     config_proto = tf.ConfigProto()
@@ -270,5 +280,7 @@ def run_extraction_on_models(model_dirs: Iterable[str],
 
             # run the saved model, then save to *.npz files
             all_tensors = run_batches(
-                sess, tensors_dict_ops, max_nbatches=batches_per_epoch, verbose=True)
-            save_results(dir_path=out_dir, np_dict=all_tensors, filename=save_filename)
+                sess, tensors_dict_ops, max_nbatches=batches_per_epoch,
+                verbose=True)
+            save_results(
+                dir_path=out_dir, np_dict=all_tensors, filename=save_filename)

@@ -60,11 +60,11 @@ def dhs_ooc(dataset: str, split: str) -> np.ndarray:
     tfrecord_paths = []
     for split in splits:
         for country_year in survey_names[split]:
-            glob_path = os.path.join(DHS_TFRECORDS_PATH_ROOT, country_year + '*', '*.tfrecord.gz')
+            glob_path = os.path.join(
+                DHS_TFRECORDS_PATH_ROOT, country_year + '*', '*.tfrecord.gz')
             tfrecord_paths.extend(glob(glob_path))
-    tfrecord_paths = np.sort(tfrecord_paths)
-    # assert len(tfrecord_paths) == SIZES[dataset][split]  # TODO: uncomment this
-    return tfrecord_paths
+    assert len(tfrecord_paths) == SIZES[dataset][split]
+    return np.sort(tfrecord_paths)
 
 
 def lsms_ooc(cys: Optional[Iterable[str]] = None) -> List[str]:

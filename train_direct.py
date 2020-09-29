@@ -1,4 +1,4 @@
-'''
+r'''
 This script trains ResNet CNN models to estimate wealth for DHS and LSMS
 locations. Model checkpoints and TensorBoard training logs are saved to
 `out_dir`.
@@ -9,7 +9,7 @@ Usage:
         --model_name resnet --num_layers 18 \
         --lr_decay 0.96 --batch_size 64 \
         --gpu 0 --num_threads 5 \
-        --cache train,train_eval,val \
+        --cache train train_eval val \
         --augment True --eval_every 1 --print_every 40 \
         --ooc {ooc} --max_epochs {max_epochs} \
         --out_dir {out_dir} \
@@ -25,6 +25,7 @@ Prerequisites: download TFRecords, process them, and create incountry folds. See
     `preprocessing/1_process_tfrecords.ipynb` and
     `preprocessing/2_create_incountry_folds.ipynb`.
 '''
+import argparse
 import json
 import os
 from pprint import pprint
@@ -234,7 +235,7 @@ def run_training(sess: tf.Session,
 
 def run_training_wrapper(**params: Any) -> None:
     '''
-    params is a dict with keys matching the FLAGS defined below
+    params is a dict with keys matching the arguments from _parse_args()
     '''
     start = time.time()
     print('Current time:', start)
@@ -262,16 +263,18 @@ def run_training_wrapper(**params: Any) -> None:
         params['experiment_name'], params['batch_size'],
         params['fc_reg'], params['conv_reg'], params['lr'])
     out_dir = os.path.join(params['out_dir'], full_experiment_name)
-    os.makedirs(out_dir, exist_ok=True)
-    print(f'Outputs directory: {out_dir}')
-
     params_filepath = os.path.join(out_dir, 'params.json')
-    assert not os.path.exists(params_filepath), f'Stopping. Found previous run at: {params_filepath}'
+    if os.path.exists(params_filepath):
+        print(f'Stopping. Found previous run at: {params_filepath}')
+        return
+
+    print(f'Outputs directory: {out_dir}')
+    os.makedirs(out_dir, exist_ok=True)
     with open(params_filepath, 'w') as config_file:
         json.dump(params, config_file, indent=4)
 
     # Create session
-    # - MUST set os.environ['CUDA_VISIBLE_DEVICES'] before creating tf.Session object
+    # - MUST set os.environ['CUDA_VISIBLE_DEVICES'] before creating tf.Session
     if params['gpu'] is None:  # restrict to CPU only
         os.environ['CUDA_VISIBLE_DEVICES'] = ''
     else:
@@ -321,58 +324,114 @@ def run_training_wrapper(**params: Any) -> None:
     print('Time elasped (sec.):', end - start)
 
 
-def main(_: Any) -> None:
-    params = {
-        key: flags.FLAGS.__getattr__(key)
-        for key in dir(flags.FLAGS)
-    }
-    run_training_wrapper(**params)
+def _parse_args() -> argparse.Namespace:
+    """Parses arguments."""
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description='Run end-to-end training.')
+
+    # paths
+    parser.add_argument(
+        '--experiment_name', default='new_experiment',
+        help='name of experiment being run')
+    parser.add_argument(
+        '--out_dir', default=os.path.join(ROOT_DIR, 'outputs/'),
+        help='path to output directory for saving checkpoints and TensorBoard '
+             'logs')
+
+    # initialization
+    parser.add_argument(
+        '--init_ckpt_dir',
+        help='path to checkpoint prefix from which to initialize weights')
+    parser.add_argument(
+        '--imagenet_weights_path',
+        help='path to ImageNet weights for initialization')
+    parser.add_argument(
+        '--hs_weight_init', choices=[None, 'random', 'same', 'samescaled'],
+        help='method for initializing weights of non-RGB bands in 1st conv '
+             'layer')
+    parser.add_argument(
+        '--exclude_final_layer', action='store_true',
+        help='whether to use checkpoint to initialize final layer')
+
+    # learning parameters
+    parser.add_argument(
+        '--label_name', default='wealthpooled',
+        help='name of label to use from the TFRecord files')
+    parser.add_argument(
+        '--batch_size', type=int, default=64,
+        help='batch size')
+    parser.add_argument(
+        '--augment', action='store_true',
+        help='whether to use data augmentation')
+    parser.add_argument(
+        '--fc_reg', type=float, default=1e-3,
+        help='Regularization penalty factor for fully connected layers')
+    parser.add_argument(
+        '--conv_reg', type=float, default=1e-3,
+        help='Regularization penalty factor for convolution layers')
+    parser.add_argument(
+        '--lr', type=float, default=1e-3,
+        help='Learning rate for optimizer')
+    parser.add_argument(
+        '--lr_decay', type=float, default=1.0,
+        help='Decay rate of the learning rate')
+
+    # high-level model control
+    parser.add_argument(
+        '--model_name', default='resnet', choices=['resnet'],
+        help='name of model architecture')
+
+    # resnet-only params
+    parser.add_argument(
+        '--num_layers', type=int, default=18, choices=[18, 34, 50],
+        help='number of ResNet layers')
+
+    # data params
+    parser.add_argument(
+        '--dataset', default='DHS_OOC_A',  # TODO: choices?
+        help='dataset to use')
+    parser.add_argument(
+        '--ooc', action='store_true',
+        help='whether to use out-of-country split')
+    parser.add_argument(
+        '--keep_frac', type=float, default=1.0,
+        help='fraction of training data to use')
+    parser.add_argument(
+        '--ls_bands', choices=[None, 'rgb', 'ms'],
+        help='Landsat bands to use')
+    parser.add_argument(
+        '--nl_band', choices=[None, 'merge', 'split'],
+        help='nightlights band')
+
+    # system
+    parser.add_argument(
+        '--gpu', type=int,
+        help='which GPU to use')
+    parser.add_argument(
+        '--num_threads', type=int, default=1,
+        help='number of threads for batcher')
+    parser.add_argument(
+        '--cache', nargs='*', default=[], choices=['train', 'train_eval', 'val'],
+        help='list of datasets to cache in memory')
+
+    # Misc
+    parser.add_argument(
+        '--max_epochs', type=int, default=150,
+        help='maximum number of epochs for training')
+    parser.add_argument(
+        '--eval_every', type=int, default=1,
+        help='evaluate the model on the validation set after every so many '
+             'epochs of training')
+    parser.add_argument(
+        '--print_every', type=int, default=40,
+        help='print training statistics after every so many steps')
+    parser.add_argument(
+        '--seed', type=int, default=123,
+        help='seed for random initialization and shuffling')
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
-    flags = tf.app.flags
-
-    # paths
-    flags.DEFINE_string('experiment_name', 'new_experiment', 'name of the experiment being run')
-    flags.DEFINE_string('out_dir', os.path.join(ROOT_DIR, 'outputs/'), 'path to output directory for saving checkpoints and TensorBoard logs')
-
-    # initialization
-    flags.DEFINE_string('init_ckpt_dir', None, 'path to checkpoint prefix from which to initialize weights (default None)')
-    flags.DEFINE_string('imagenet_weights_path', None, 'path to ImageNet weights for initialization (default None)')
-    flags.DEFINE_string('hs_weight_init', None, 'method for initializing weights of non-RGB bands in 1st conv layer, one of [None (default), "random", "same", "samescaled"]')
-    flags.DEFINE_boolean('exclude_final_layer', False, 'whether to use checkpoint to initialize final layer')
-
-    # learning parameters
-    flags.DEFINE_string('label_name', 'wealthpooled', 'name of label to use from the TFRecord files')
-    flags.DEFINE_integer('batch_size', 64, 'batch size')
-    flags.DEFINE_boolean('augment', True, 'whether to use data augmentation')
-    flags.DEFINE_float('fc_reg', 1e-3, 'Regularization penalty factor for fully connected layers')
-    flags.DEFINE_float('conv_reg', 1e-3, 'Regularization penalty factor for convolution layers')
-    flags.DEFINE_float('lr', 1e-3, 'Learning rate for optimizer')
-    flags.DEFINE_float('lr_decay', 1.0, 'Decay rate of the learning rate (default 1.0 for no decay)')
-
-    # high-level model control
-    flags.DEFINE_string('model_name', 'resnet', 'name of the model to be used, currently only "resnet" is supported')
-
-    # resnet-only params
-    flags.DEFINE_integer('num_layers', 18, 'Number of ResNet layers, one of [18, 34, 50]')
-
-    # data params
-    flags.DEFINE_string('dataset', 'DHS_OOC_A', 'dataset to use')  # TODO
-    flags.DEFINE_boolean('ooc', True, 'whether to use out-of-country split')
-    flags.DEFINE_float('keep_frac', 1.0, 'fraction of training data to use (default 1.0 uses all data)')
-    flags.DEFINE_string('ls_bands', None, 'Landsat bands to use, one of [None (default), "rgb", "ms"]')
-    flags.DEFINE_string('nl_band', None, 'nightlights band, one of [None (default), "merge", "split"]')
-
-    # system
-    flags.DEFINE_integer('gpu', None, 'which GPU to use (default None)')
-    flags.DEFINE_integer('num_threads', 1, 'number of threads for batcher')
-    flags.DEFINE_list('cache', [], 'comma-separated list (no spaces) of datasets to cache in memory, choose from [None, "train", "train_eval", "val"]')
-
-    # Misc
-    flags.DEFINE_integer('max_epochs', 150, 'maximum number of epochs for training')
-    flags.DEFINE_integer('eval_every', 1, 'evaluate the model on the validation set after every so many epochs of training')
-    flags.DEFINE_integer('print_every', 40, 'print training statistics after every so many steps')
-    flags.DEFINE_integer('seed', 123, 'seed for random initialization and shuffling')
-
-    tf.app.run()
+    args = _parse_args()
+    run_training_wrapper(**vars(args))
