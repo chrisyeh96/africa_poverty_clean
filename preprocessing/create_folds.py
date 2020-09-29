@@ -3,7 +3,6 @@ import itertools
 import os
 import pickle
 from pprint import pprint
-import sys
 from typing import Dict, Iterable, List, Optional
 
 import matplotlib.pyplot as plt
@@ -11,7 +10,6 @@ import numpy as np
 import scipy.spatial
 import sklearn.cluster
 
-sys.path.append('../')
 from utils.geo_plot import plot_locs  # ignore: E402
 
 
