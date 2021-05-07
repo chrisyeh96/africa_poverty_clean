@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from collections import defaultdict
+from collections.abc import Iterable
 import itertools
 import os
 import pickle
 from pprint import pprint
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,7 +21,7 @@ def create_folds(locs: np.ndarray,
                  fold_names: Iterable[str],
                  verbose: bool = True,
                  plot_largest_clusters: int = 0
-                 ) -> Dict[str, np.ndarray]:
+                 ) -> dict[str, np.ndarray]:
     '''Partitions locs into folds.
 
     Args
@@ -61,7 +64,7 @@ def create_folds(locs: np.ndarray,
     sorted_clusters = sorted(clusters_dict.keys(), key=lambda c: -len(clusters_dict[c]))
 
     # greedily assign clusters to folds
-    folds: Dict[str, List[int]] = {f: [] for f in fold_names}
+    folds: dict[str, Any] = {f: [] for f in fold_names}
     for c in sorted_clusters:
         # assign points in cluster c to smallest fold
         f = min(folds, key=lambda f: len(folds[f]))
@@ -99,7 +102,7 @@ def create_folds(locs: np.ndarray,
     return folds
 
 
-def verify_folds(folds: Dict[str, np.ndarray],
+def verify_folds(folds: dict[str, np.ndarray],
                  locs: np.ndarray,
                  min_dist: float,
                  max_index: Optional[int] = None
@@ -134,9 +137,9 @@ def verify_folds(folds: Dict[str, np.ndarray],
         print(a, b, np.min(dists))
 
 
-def create_split_folds(test_folds: Dict[str, np.ndarray],
-                       fold_names: List[str],
-                       ) -> Dict[str, Dict[str, np.ndarray]]:
+def create_split_folds(test_folds: dict[str, np.ndarray],
+                       fold_names: list[str],
+                       ) -> dict[str, dict[str, np.ndarray]]:
     '''Creates a folds dict mapping each fold name (str) to another dict
     that maps each split (str) to a np.array of indices.
 
@@ -157,7 +160,7 @@ def create_split_folds(test_folds: Dict[str, np.ndarray],
     - folds: dict, folds[f][s] is a np.array of indices for split s of fold f
     '''
     # create train/val/test splits
-    folds: Dict[str, Dict[str, np.ndarray]] = {}
+    folds: dict[str, dict[str, np.ndarray]] = {}
     for i, f in enumerate(fold_names):
         folds[f] = {}
         folds[f]['test'] = test_folds[f]
@@ -172,7 +175,7 @@ def create_split_folds(test_folds: Dict[str, np.ndarray],
 
 
 def save_folds(folds_path: str,
-               folds: Dict[str, Dict[str, np.ndarray]],
+               folds: dict[str, dict[str, np.ndarray]],
                check_exists: bool = True
                ) -> None:
     '''Saves folds dict to a pickle file at folds_path.

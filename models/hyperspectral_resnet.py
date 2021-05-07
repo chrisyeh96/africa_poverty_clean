@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional, Tuple
+from __future__ import annotations
+
+from typing import Any, Optional
 
 import tensorflow as tf
 
@@ -34,14 +36,14 @@ def update_feature_dict(x: tf.Tensor, c: Config) -> None:
 def inference(x: tf.Tensor,
               is_training: bool,
               num_classes: int = 1000,
-              num_blocks: List[int] = [3, 4, 6, 3],  # defaults to 50-layer network
+              num_blocks: list[int] = [3, 4, 6, 3],  # defaults to 50-layer network
               use_bias: bool = False,  # defaults to using batch norm
               bottleneck: bool = True,
               use_dilated_conv_in_first_layer: bool = False,
-              blocks_to_save: Dict[int, Optional[bool]] = None,
+              blocks_to_save: dict[int, Optional[bool]] = None,
               conv_reg: float = 0.001,
               fc_reg: float = 0.001
-              ) -> Tuple[tf.Tensor, tf.Tensor]:
+              ) -> tuple[tf.Tensor, tf.Tensor]:
     '''Implements Resnet v2 (preactivation).
 
     Args
@@ -327,7 +329,7 @@ def first_layer_dilated_conv(x: tf.Tensor, c: Config) -> tf.Tensor:
     split_weights = tf.split(axis=2, num_or_size_splits=9, value=weights)
     split_x = tf.split(axis=3, num_or_size_splits=9, value=x)
 
-    def do_dilated_cov(indices: List[int], rate: int, name: str) -> tf.Tensor:
+    def do_dilated_cov(indices: list[int], rate: int, name: str) -> tf.Tensor:
         return tf.nn.atrous_conv2d(
             value=tf.concat(axis=3, values=[band for i, band in enumerate(split_x) if i in indices]),
             filters=tf.concat(axis=2, values=[_filter for i, _filter in enumerate(split_weights) if i in indices]),

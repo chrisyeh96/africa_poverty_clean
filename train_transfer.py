@@ -23,11 +23,13 @@ Prerequisites: download TFRecords, process them, and create incountry folds. See
     `preprocessing/1_process_tfrecords.ipynb` and
     `preprocessing/2_create_incountry_folds.ipynb`.
 '''
+from __future__ import annotations
+
 import json
 import os
 from pprint import pprint
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from batchers import batcher, tfrecord_paths_utils
 from models.base_model import BaseModel
@@ -45,7 +47,7 @@ ROOT_DIR = os.path.dirname(__file__)  # folder containing this file
 def run_training(sess: tf.Session,
                  dataset: str,
                  model_name: str,
-                 model_params: Dict[str, Any],
+                 model_params: dict[str, Any],
                  batch_size: int,
                  ls_bands: Optional[str],
                  nl_label: str,
@@ -56,7 +58,7 @@ def run_training(sess: tf.Session,
                  print_every: int,
                  eval_every: int,
                  num_threads: int,
-                 cache: List[str],
+                 cache: list[str],
                  out_dir: str,
                  init_ckpt_dir: Optional[str],
                  imagenet_weights_path: Optional[str],

@@ -1,4 +1,7 @@
-from typing import Dict, Iterable, Mapping, Optional, Tuple, Union
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
+from typing import Optional
 
 import tensorflow as tf
 
@@ -7,7 +10,7 @@ from batchers.dataset_constants import MEANS_DICT, STD_DEVS_DICT
 
 class Batcher():
     def __init__(self,
-                 tfrecord_files: Union[Iterable[str], tf.Tensor],
+                 tfrecord_files: Iterable[str] | tf.Tensor,
                  label_name: Optional[str] = None,
                  scalar_features: Optional[Mapping[str, tf.DType]] = None,
                  ls_bands: Optional[str] = 'rgb',
@@ -80,7 +83,7 @@ class Batcher():
             raise ValueError('nl_band cannot be None if nl_label is not None')
         self.nl_label = nl_label
 
-    def get_batch(self) -> Tuple[tf.Operation, Dict[str, tf.Tensor]]:
+    def get_batch(self) -> tuple[tf.Operation, dict[str, tf.Tensor]]:
         '''Gets the tf.Tensors that represent a batch of data.
 
         Returns
@@ -149,7 +152,7 @@ class Batcher():
         iter_init = iterator.initializer
         return iter_init, batch
 
-    def process_tfrecords(self, example_proto: tf.Tensor) -> Dict[str, tf.Tensor]:
+    def process_tfrecords(self, example_proto: tf.Tensor) -> dict[str, tf.Tensor]:
         '''
         Args
         - example_proto: a tf.train.Example protobuf
@@ -242,7 +245,7 @@ class Batcher():
 
         return result
 
-    def split_nl_band(self, ex: Dict[str, tf.Tensor]) -> Dict[str, tf.Tensor]:
+    def split_nl_band(self, ex: dict[str, tf.Tensor]) -> dict[str, tf.Tensor]:
         '''Splits the NL band into separate DMSP and VIIRS bands.
 
         Args
@@ -267,7 +270,7 @@ class Batcher():
         )
         return ex
 
-    def augment_example(self, ex: Dict[str, tf.Tensor]) -> Dict[str, tf.Tensor]:
+    def augment_example(self, ex: dict[str, tf.Tensor]) -> dict[str, tf.Tensor]:
         '''Performs image augmentation (random flips + levels adjustments).
         Does not perform level adjustments on NL band(s).
 

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
 import heapq
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -7,7 +10,7 @@ import pandas as pd
 
 def load_npz(path: str, verbose: bool = True,
              check: Optional[Mapping[str, np.ndarray]] = None
-             ) -> Dict[str, np.ndarray]:
+             ) -> dict[str, np.ndarray]:
     '''Loads .npz file into a dict.
 
     Args
@@ -32,7 +35,7 @@ def load_npz(path: str, verbose: bool = True,
 
 
 def colordisplay(df: pd.DataFrame,
-                 columns: Optional[Union[str, List[str]]] = None,
+                 columns: Optional[str | list[str]] = None,
                  cmap: str = 'coolwarm') -> None:
     '''Displays a pandas DataFrame with background color.
 
@@ -46,7 +49,7 @@ def colordisplay(df: pd.DataFrame,
     display(df.style.background_gradient(cmap=cmap, subset=columns))
 
 
-def add_to_heap(h: List, k: int, value: Any, data: Any) -> None:
+def add_to_heap(h: list, k: int, value: Any, data: Any) -> None:
     '''Tracks the max k elements using a heap.
 
     We will actually use a min-heap for this task. That way, when a new element

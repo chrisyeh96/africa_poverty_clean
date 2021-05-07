@@ -12,10 +12,13 @@ Prerequisites:
 2) either train models (see README.md for instructions), or download model
     checkpoints into outputs/ directory
 '''
+from __future__ import annotations
+
 from collections import defaultdict
+from collections.abc import Callable, Iterable
 import json
 import os
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -35,14 +38,15 @@ BATCH_SIZE = 128
 KEEP_FRAC = 1.0
 IS_TRAINING = False
 
-DHS_MODELS: List[str] = [
+DHS_MODELS: list[str] = [
     # put paths to DHS models here (relative to OUTPUTS_ROOT_DIR)
-    # e.g., "dhs_ooc/DHS_OOC_A_..."  # TODO
+    # e.g., "dhs_ooc/DHS_OOC_A_..."
+    'dhs_ooc/DHS_OOC_A_ms_samescaled_b64_fc01_conv01_lr0001'
 
     # put paths to DHSNL models here (for transfer learning)
 ]
 
-LSMS_MODELS: List[str] = [
+LSMS_MODELS: list[str] = [
     # put paths to LSMS models here
 ]
 
@@ -71,8 +75,9 @@ def get_model_class(model_arch: str) -> Callable:
 
 
 def get_batcher(dataset: str, ls_bands: str, nl_band: str, num_epochs: int,
-                cache: bool) -> Tuple[batcher.Batcher, int, Dict[Any, Any]]:
-    '''
+                cache: bool) -> tuple[batcher.Batcher, int, dict[Any, Any]]:
+    '''Gets the batcher for a given dataset.
+
     Args
     - dataset: str, one of ['dhs', 'lsms'] # TODO
     - ls_bands: one of [None, 'ms', 'rgb']
@@ -118,7 +123,7 @@ def get_batcher(dataset: str, ls_bands: str, nl_band: str, num_epochs: int,
     return b, size, feed_dict
 
 
-def read_params_json(model_dir: str, keys: Iterable) -> Tuple[Any, ...]:
+def read_params_json(model_dir: str, keys: Iterable) -> tuple[Any, ...]:
     '''Reads requested keys from json file at `model_dir/params.json`.
 
     Args
@@ -145,11 +150,9 @@ def main() -> None:
     # group models by batcher configuration and model_arch, where
     #   config = (dataset, ls_bands, nl_band, model_arch)
     all_models = {'dhs': DHS_MODELS, 'lsms': LSMS_MODELS}
-    ModelsByConfigType = Dict[
-        Tuple[str, Optional[str], Optional[str], str],
-        List[str]
-    ]
-    models_by_config: ModelsByConfigType = defaultdict(list)
+    models_by_config: dict[
+        tuple[str, Optional[str], Optional[str], str], list[str]
+        ] = defaultdict(list)
     for dataset, model_dirs in all_models.items():
         for model_dir in model_dirs:
             ls_bands, nl_band, model_arch = read_params_json(

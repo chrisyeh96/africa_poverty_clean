@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from collections import defaultdict
+from collections.abc import Callable, Iterable, Mapping
 from glob import glob
 import os
 from tqdm.auto import tqdm
-from typing import Any, Callable, DefaultDict, Dict, Iterable, Mapping, Optional
+from typing import Any, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -121,7 +124,7 @@ def print_number_of_parameters(verbose: bool = True) -> None:
 
 
 def run_batches(sess: tf.Session, tensors_dict_ops: Mapping[str, tf.Tensor],
-                max_nbatches: int = -1) -> Dict[str, np.ndarray]:
+                max_nbatches: int = -1) -> dict[str, np.ndarray]:
     '''Runs the ops in tensors_dict_ops for a fixed number of batches or until
     reaching a tf.errors.OutOfRangeError, concatenating the runs.
 
@@ -137,7 +140,7 @@ def run_batches(sess: tf.Session, tensors_dict_ops: Mapping[str, tf.Tensor],
     Returns
     - all_tensors: dict, str => np.array, shape [N] or [N, D]
     '''
-    all_tensors = defaultdict(list)  # type: DefaultDict[str, Any]
+    all_tensors: dict[str, Any] = defaultdict(list)
     curr_batch = 0
     progbar = tqdm(total=max_nbatches if max_nbatches > 0 else None)
     try:

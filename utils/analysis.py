@@ -1,4 +1,6 @@
-from typing import List, Optional, Tuple
+from __future__ import annotations
+
+from typing import Optional
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -57,7 +59,7 @@ def evaluate(labels: np.ndarray,
              weights: Optional[np.ndarray] = None,
              do_print: bool = False,
              title: str = None
-             ) -> Tuple[float, float, float, float]:
+             ) -> tuple[float, float, float, float]:
     '''TODO
 
     Args
@@ -80,7 +82,7 @@ def evaluate(labels: np.ndarray,
     return r2, R2, mse, rank
 
 
-def evaluate_df(df: pd.DataFrame, cols: List[str], labels_col: str = 'label',
+def evaluate_df(df: pd.DataFrame, cols: list[str], labels_col: str = 'label',
                 weights_col: Optional[str] = None,
                 index_name: Optional[str] = None) -> pd.DataFrame:
     '''TODO
@@ -135,7 +137,7 @@ def plot_residuals(labels: np.ndarray, preds: np.ndarray,
 
 
 def sorted_scores(labels: np.ndarray, preds: np.ndarray, metric: str,
-                  sort: str = 'increasing') -> Tuple[np.ndarray, np.ndarray]:
+                  sort: str = 'increasing') -> tuple[np.ndarray, np.ndarray]:
     '''Sorts (pred, label) datapoints by label using the given sorting
     direction, then calculates the chosen score over for the first k
     datapoints, for k = 1 to N.
@@ -166,12 +168,12 @@ def sorted_scores(labels: np.ndarray, preds: np.ndarray, metric: str,
     return scores, labels_sorted
 
 
-def plot_label_vs_score(scores_list: List[np.ndarray],
-                        labels_list: List[np.ndarray],
-                        legends: List[str],
+def plot_label_vs_score(scores_list: list[np.ndarray],
+                        labels_list: list[np.ndarray],
+                        legends: list[str],
                         metric: str,
                         sort: str,
-                        figsize: Tuple[float, float] = (5, 4)) -> None:
+                        figsize: tuple[float, float] = (5, 4)) -> None:
     '''TODO
 
     Args
@@ -200,11 +202,11 @@ def plot_label_vs_score(scores_list: List[np.ndarray],
     plt.show()
 
 
-def plot_percdata_vs_score(scores_list: List[np.ndarray],
-                           legends: List[str],
+def plot_percdata_vs_score(scores_list: list[np.ndarray],
+                           legends: list[str],
                            metric: str,
                            sort: str,
-                           figsize: Tuple[float, float] = (5, 4)) -> None:
+                           figsize: tuple[float, float] = (5, 4)) -> None:
     '''TODO
 
     Args
@@ -260,9 +262,9 @@ def chunk_vs_score(labels: np.ndarray, preds: np.ndarray, nchunks: int,
 
 
 def plot_chunk_vs_score(scores: np.ndarray,
-                        legends: List[str],
+                        legends: list[str],
                         metric: str,
-                        figsize: Tuple[float, float] = (5, 4),
+                        figsize: tuple[float, float] = (5, 4),
                         cmap: Optional[str] = None,
                         sort: Optional[str] = None,
                         xlabel: Optional[str] = 'chunk of data') -> None:

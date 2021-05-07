@@ -1,5 +1,7 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
 import time
-from typing import Dict, List, Mapping, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -10,7 +12,7 @@ def analyze_tfrecord_batch(iter_init: tf.Operation,
                            total_num_images: int,
                            nbands: int,
                            k: int
-                           ) -> Dict[str, np.ndarray]:
+                           ) -> dict[str, np.ndarray]:
     '''Calculates per-band statistics.
 
     A good pixel is one where at least 1 band is > 0.
@@ -50,7 +52,7 @@ def analyze_tfrecord_batch(iter_init: tf.Operation,
     start = time.time()
 
     # number of `good pixels` in each image
-    num_good_pixels = []
+    num_good_pixels: list[int] = []
 
     with tf.Session() as sess:
         if iter_init is not None:
@@ -119,7 +121,7 @@ def analyze_tfrecord_batch(iter_init: tf.Operation,
     print('Total time: {:0.3f}s, Num batches: {}'.format(total_time, len(batch_times)))
 
     stats = {
-        'num_good_pixels': num_good_pixels,
+        'num_good_pixels': np.array(num_good_pixels),
         'mins': mins,
         'mins_nz': mins_nz,
         'mins_goodpx': mins_goodpx,
@@ -132,8 +134,8 @@ def analyze_tfrecord_batch(iter_init: tf.Operation,
 
 
 def per_band_mean_std(stats: Mapping[str, np.ndarray],
-                      band_order: List[str]
-                      ) -> Tuple[Dict[str, np.number], Dict]:
+                      band_order: list[str]
+                      ) -> tuple[dict[str, np.number], dict]:
     '''Calculates the per-band mean and standard deviation, only including
     "good pixels". A good pixel is one where at least 1 band is > 0.
 
@@ -164,7 +166,7 @@ def per_band_mean_std(stats: Mapping[str, np.ndarray],
 
 
 def print_analysis_results(stats: Mapping[str, np.ndarray],
-                           band_order: List[str]) -> None:
+                           band_order: list[str]) -> None:
     '''Prints per-band statistics based on different pixel criteria.
 
     Args

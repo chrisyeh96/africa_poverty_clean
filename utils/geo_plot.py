@@ -1,4 +1,6 @@
-from typing import Any, Iterable, Optional, Tuple
+from __future__ import annotations
+
+from typing import Any, Iterable, Optional
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -8,7 +10,7 @@ import numpy as np
 
 
 def setup_ax(fig: matplotlib.figure.Figure,
-             pos: Tuple[int, int, int] = (1, 1, 1),
+             pos: tuple[int, int, int] = (1, 1, 1),
              ) -> matplotlib.axes.Axes:
     '''
     Args
@@ -70,8 +72,8 @@ def setup_ax(fig: matplotlib.figure.Figure,
 
 def plot_locs(locs: np.ndarray,
               fig: Optional[matplotlib.figure.Figure] = None,
-              pos: Tuple[int, int, int] = (1, 1, 1),
-              figsize: Tuple[int, int] = (15, 15),
+              pos: tuple[int, int, int] = (1, 1, 1),
+              figsize: tuple[int, int] = (15, 15),
               title: Optional[str] = None,
               colors: Optional[Iterable[int]] = None,
               cbar_label: Optional[str] = None,

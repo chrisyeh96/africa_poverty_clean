@@ -1,4 +1,6 @@
-from typing import Optional, Tuple
+from __future__ import annotations
+
+from typing import Optional
 
 import tensorflow as tf
 
@@ -7,7 +9,7 @@ def loss_mse(labels: tf.Tensor,
              preds: tf.Tensor,
              weights: Optional[tf.Tensor] = None,
              add_summaries: bool = True
-             ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, Optional[tf.Tensor]]:
+             ) -> tuple[tf.Tensor, tf.Tensor, tf.Tensor, Optional[tf.Tensor]]:
     '''Computes the mean squared-error between preds and labels.
 
     Args
@@ -40,7 +42,7 @@ def loss_xent(labels: tf.Tensor,
               logits: tf.Tensor,
               weights: Optional[tf.Tensor] = None,
               add_summaries: bool = True
-              ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, Optional[tf.Tensor]]:
+              ) -> tuple[tf.Tensor, tf.Tensor, tf.Tensor, Optional[tf.Tensor]]:
     '''Takes a softmax over logits, then calculates cross-entropy loss with the
     given labels.
 
@@ -73,7 +75,7 @@ def loss_xent(labels: tf.Tensor,
 def _loss_helper(loss: tf.Tensor,
                  loss_name: Optional[str] = None,
                  add_summaries: bool = False
-                 ) -> Tuple[tf.Tensor, tf.Tensor, Optional[tf.Tensor]]:
+                 ) -> tuple[tf.Tensor, tf.Tensor, Optional[tf.Tensor]]:
     '''Helper function to get total loss and regularization loss, and add summaries for
     all losses.
 

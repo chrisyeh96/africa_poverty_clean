@@ -1,7 +1,10 @@
+from __future__ import annotations
+
+from collections.abc import Iterable
 from glob import glob
 import os
 import pickle
-from typing import Dict, Iterable, List, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -67,7 +70,7 @@ def dhs_ooc(dataset: str, split: str) -> np.ndarray:
     return np.sort(tfrecord_paths)
 
 
-def lsms_ooc(cys: Optional[Iterable[str]] = None) -> List[str]:
+def lsms_ooc(cys: Optional[Iterable[str]] = None) -> list[str]:
     '''Gets a list of paths to TFRecords for a given list of LSMS surveys.
 
     Args
@@ -92,7 +95,7 @@ def lsms_ooc(cys: Optional[Iterable[str]] = None) -> List[str]:
 
 def _incountry(dataset: str, splits: Iterable[str], tfrecords_glob_path: str,
                folds_pickle_path: str
-               ) -> Dict[str, np.ndarray]:
+               ) -> dict[str, np.ndarray]:
     '''
     Args
     - dataset: str, format '*_incountry_X' where 'X' is one of
@@ -119,7 +122,7 @@ def _incountry(dataset: str, splits: Iterable[str], tfrecords_glob_path: str,
         incountry_folds = pickle.load(f)
         incountry_fold = incountry_folds[fold]
 
-    paths: Dict[str, np.ndarray] = {}
+    paths: dict[str, np.ndarray] = {}
     for split in splits:
         if split == 'all':
             paths[split] == all_tfrecord_paths
@@ -130,7 +133,7 @@ def _incountry(dataset: str, splits: Iterable[str], tfrecords_glob_path: str,
     return paths
 
 
-def dhs_incountry(dataset: str, splits: Iterable[str]) -> Dict[str, np.ndarray]:
+def dhs_incountry(dataset: str, splits: Iterable[str]) -> dict[str, np.ndarray]:
     '''
     Args
     - dataset: str, has format 'DHS_incountry_X' where 'X' is one of
@@ -147,7 +150,7 @@ def dhs_incountry(dataset: str, splits: Iterable[str]) -> Dict[str, np.ndarray]:
                       folds_pickle_path=folds_pickle_path)
 
 
-def lsms_incountry(dataset: str, splits: Iterable[str]) -> Dict[str, np.ndarray]:
+def lsms_incountry(dataset: str, splits: Iterable[str]) -> dict[str, np.ndarray]:
     '''
     Args
     - dataset: str, has format 'LSMS_incountry_X' where 'X' is one of

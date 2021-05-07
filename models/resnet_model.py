@@ -1,4 +1,6 @@
-from typing import Dict, List, Optional
+from __future__ import annotations
+
+from typing import Optional
 
 from models.base_model import BaseModel
 from models.init_from_pretrained import init_resnet_v2_from_numpy
@@ -11,7 +13,7 @@ class Hyperspectral_Resnet(BaseModel):
     def __init__(self, inputs: int, num_outputs: int, is_training: bool,
                  fc_reg: float = 0.0003, conv_reg: float = 0.0003,
                  use_dilated_conv_in_first_layer: bool = False,
-                 num_layers: int = 50, blocks_to_save: Optional[List[int]] = None):
+                 num_layers: int = 50, blocks_to_save: Optional[list[int]] = None):
         '''
         Args
         - inputs: tf.Tensor, shape [batch_size, H, W, C], type float32
@@ -49,7 +51,7 @@ class Hyperspectral_Resnet(BaseModel):
         else:
             raise ValueError('Invalid num_layers passed to model')
 
-        self.block_features: Optional[Dict[int, Optional[bool]]] = None
+        self.block_features: Optional[dict[int, Optional[bool]]] = None
         if blocks_to_save is not None:
             self.block_features = {block_index: None for block_index in blocks_to_save}
 
@@ -89,7 +91,7 @@ class Hyperspectral_Resnet(BaseModel):
         with tf.variable_scope('resnet/scale1', reuse=True):
             return tf.get_variable('weights')
 
-    def get_final_layer_weights(self) -> List[tf.Tensor]:
+    def get_final_layer_weights(self) -> list[tf.Tensor]:
         '''Gets the weights in the final fully-connected layer after the conv layers.
 
         Returns: list of tf.Tensor

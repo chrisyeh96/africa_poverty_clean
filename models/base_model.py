@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
-from typing import List, Optional
+from typing import Optional
 
 import tensorflow as tf
 
@@ -47,7 +49,7 @@ class BaseModel(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def get_final_layer_weights(self) -> List[tf.Tensor]:
+    def get_final_layer_weights(self) -> list[tf.Tensor]:
         '''Gets the weights in the final fully-connected layer after the conv layers.
 
         Returns: list of tf.Tensor

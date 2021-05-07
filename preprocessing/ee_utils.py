@@ -1,4 +1,7 @@
-from typing import Any, Mapping, Optional, Tuple
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import ee
 import pandas as pd
@@ -37,7 +40,7 @@ def df_to_fc(df: pd.DataFrame, lat_colname: str = 'lat',
     return ee.FeatureCollection(ee_features)
 
 
-def surveyyear_to_range(survey_year: int, nl: bool = False) -> Tuple[str, str]:
+def surveyyear_to_range(survey_year: int, nl: bool = False) -> tuple[str, str]:
     '''Returns the start and end dates for filtering satellite images for a
     survey beginning in the specified year.
 

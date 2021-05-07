@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable, Mapping
 import os
 import time
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -44,7 +47,7 @@ class BaseTrainer(metaclass=ABCMeta):
                  image_summaries: bool,
                  loss_fn: LossFn,
                  loss_type: str,
-                 results_cols: List[str]):
+                 results_cols: list[str]):
         '''
         Args
         - train_batch / train_eval_batch / val_batch: dict of tf.Tensor
@@ -183,7 +186,7 @@ class BaseTrainer(metaclass=ABCMeta):
 
         if self.train_weights is None:
             weights_all = None
-            required_ops = (self.train_preds, self.train_labels, self.train_op)  # type: Tuple[tf.Tensor, ...]
+            required_ops = (self.train_preds, self.train_labels, self.train_op)  # type: tuple[tf.Tensor, ...]
         else:
             weights_all = []
             required_ops = (self.train_preds, self.train_labels, self.train_weights, self.train_op)
@@ -365,7 +368,7 @@ class BaseTrainer(metaclass=ABCMeta):
         self.results.to_csv(csv_path)
 
     @abstractmethod
-    def create_eval_summaries(self, scope: str) -> Dict[str, tf.Tensor]:
+    def create_eval_summaries(self, scope: str) -> dict[str, tf.Tensor]:
         raise NotImplementedError
 
     @abstractmethod
@@ -456,7 +459,7 @@ class RegressionTrainer(BaseTrainer):
     def evaluate_preds(self, labels: np.ndarray, preds: np.ndarray, split: str,
                        weights: Optional[np.ndarray] = None,
                        eval_summaries: Optional[Mapping[str, tf.Tensor]] = None
-                       ) -> Tuple[float, float, float, float]:
+                       ) -> tuple[float, float, float, float]:
         '''Helper method to calculate r^2, R^2, mse, and rank.
 
         Args
@@ -495,7 +498,7 @@ class RegressionTrainer(BaseTrainer):
             self.summary_writer.add_summary(summary_str, self.epoch)
         return r2, R2, mse, rank
 
-    def create_eval_summaries(self, scope: str) -> Dict[str, tf.Tensor]:
+    def create_eval_summaries(self, scope: str) -> dict[str, tf.Tensor]:
         '''
         Args
         - scope: str
@@ -583,7 +586,7 @@ class ClassificationTrainer(BaseTrainer):
     def evaluate_preds(self, labels: np.ndarray, preds: np.ndarray, split: str,
                        weights: Optional[np.ndarray] = None,
                        eval_summaries: Optional[Mapping[str, tf.Tensor]] = None
-                       ) -> Tuple[float, float]:
+                       ) -> tuple[float, float]:
         '''Helper method to calculate loss_xent and accuracy.
 
         Args
@@ -616,7 +619,7 @@ class ClassificationTrainer(BaseTrainer):
             self.summary_writer.add_summary(summary_str, self.epoch)
         return xent, acc
 
-    def create_eval_summaries(self, scope: str) -> Dict[str, tf.Tensor]:
+    def create_eval_summaries(self, scope: str) -> dict[str, tf.Tensor]:
         '''
         Args
         - scope: str
