@@ -42,12 +42,18 @@ DHS_MODELS: list[str] = [
     # put paths to DHS models here (relative to OUTPUTS_ROOT_DIR)
     # e.g., "dhs_ooc/DHS_OOC_A_..."
     'dhs_ooc/DHS_OOC_A_ms_samescaled_b64_fc01_conv01_lr0001'
+    'dhs_ooc/DHS_OOC_B_ms_samescaled_b64_fc001_conv001_lr0001',
+    'dhs_ooc/DHS_OOC_C_ms_samescaled_b64_fc001_conv001_lr001',
+    'dhs_ooc/DHS_OOC_D_ms_samescaled_b64_fc001_conv001_lr01',
+    'dhs_ooc/DHS_OOC_E_ms_samescaled_b64_fc01_conv01_lr001',
 
     # put paths to DHSNL models here (for transfer learning)
+    # TODO
 ]
 
 LSMS_MODELS: list[str] = [
     # put paths to LSMS models here
+    # TODO
 ]
 
 
