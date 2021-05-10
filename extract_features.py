@@ -11,6 +11,7 @@ Prerequisites:
     `preprocessing/2_create_incountry_folds.ipynb`.
 2) either train models (see README.md for instructions), or download model
     checkpoints into outputs/ directory
+    TODO: elaborate here
 '''
 from __future__ import annotations
 
@@ -18,7 +19,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable
 import json
 import os
-from typing import Any, Optional
+from typing import Optional
 
 import numpy as np
 import tensorflow as tf
@@ -41,11 +42,23 @@ IS_TRAINING = False
 DHS_MODELS: list[str] = [
     # put paths to DHS models here (relative to OUTPUTS_ROOT_DIR)
     # e.g., "dhs_ooc/DHS_OOC_A_..."
-    'dhs_ooc/DHS_OOC_A_ms_samescaled_b64_fc01_conv01_lr0001'
+    'dhs_ooc/DHS_OOC_A_ms_samescaled_b64_fc01_conv01_lr0001',
     'dhs_ooc/DHS_OOC_B_ms_samescaled_b64_fc001_conv001_lr0001',
     'dhs_ooc/DHS_OOC_C_ms_samescaled_b64_fc001_conv001_lr001',
     'dhs_ooc/DHS_OOC_D_ms_samescaled_b64_fc001_conv001_lr01',
     'dhs_ooc/DHS_OOC_E_ms_samescaled_b64_fc01_conv01_lr001',
+
+    'dhs_ooc/DHS_OOC_A_nl_random_b64_fc1.0_conv1.0_lr0001',
+    'dhs_ooc/DHS_OOC_B_nl_random_b64_fc1.0_conv1.0_lr0001',
+    'dhs_ooc/DHS_OOC_C_nl_random_b64_fc1.0_conv1.0_lr0001',
+    'dhs_ooc/DHS_OOC_D_nl_random_b64_fc1.0_conv1.0_lr01',
+    'dhs_ooc/DHS_OOC_E_nl_random_b64_fc1.0_conv1.0_lr0001',
+
+    'dhs_ooc/DHS_OOC_A_rgb_same_b64_fc001_conv001_lr01',
+    'dhs_ooc/DHS_OOC_B_rgb_same_b64_fc001_conv001_lr0001',
+    'dhs_ooc/DHS_OOC_C_rgb_same_b64_fc001_conv001_lr0001',
+    'dhs_ooc/DHS_OOC_D_rgb_same_b64_fc1.0_conv1.0_lr01',
+    'dhs_ooc/DHS_OOC_E_rgb_same_b64_fc001_conv001_lr0001',
 
     # put paths to DHSNL models here (for transfer learning)
     # TODO
@@ -81,7 +94,7 @@ def get_model_class(model_arch: str) -> Callable:
 
 
 def get_batcher(dataset: str, ls_bands: str, nl_band: str, num_epochs: int,
-                cache: bool) -> tuple[batcher.Batcher, int, dict[Any, Any]]:
+                cache: bool) -> tuple[batcher.Batcher, int, dict]:
     '''Gets the batcher for a given dataset.
 
     Args
@@ -129,7 +142,7 @@ def get_batcher(dataset: str, ls_bands: str, nl_band: str, num_epochs: int,
     return b, size, feed_dict
 
 
-def read_params_json(model_dir: str, keys: Iterable) -> tuple[Any, ...]:
+def read_params_json(model_dir: str, keys: Iterable[str]) -> tuple:
     '''Reads requested keys from json file at `model_dir/params.json`.
 
     Args
