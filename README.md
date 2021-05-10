@@ -156,3 +156,46 @@ TODO
 
 TODO
 - instructions for loading ImageNet weights
+
+
+## Code Formatting and Type Checking
+
+This repo uses [flake8](https://flake8.pycqa.org/) for Python linting and [mypy](https://mypy.readthedocs.io/) for type-checking. Configuration files for each are included in this repo: `.flake8` and `mypy.ini`.
+
+To run either code linting or type checking, set the current directory to the repo root directory. Then run any of the following commands:
+
+```bash
+# LINTING
+# =======
+
+# entire repo
+flake8
+
+# all modules within utils directory
+flake8 utils
+
+# a single module
+flake8 utils/analysis.py
+
+# a jupyter notebook
+# - W391: Blank line at end of file
+# - E402: Module level import not at top of file
+# - F404: from __future__ imports must occur at the beginning of the file
+jupyter nbconvert preprocessing/1_process_tfrecords.ipynb --stdout --to script | flake8 - --extend-ignore=W391,E402,F404
+
+
+# TYPE CHECKING
+# =============
+
+# entire repo
+mypy .
+
+# all modules within utils directory
+mypy -p utils
+
+# a single module
+mypy utils/analysis.py
+
+# a jupyter notebook
+mypy -c "$(jupyter nbconvert preprocessing/1_process_tfrecords.ipynb --stdout --to script)"
+```
