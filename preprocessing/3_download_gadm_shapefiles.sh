@@ -103,7 +103,7 @@ do
     echo "Getting shapefiles for ${code}"
 
     # download ZIP'ed shapefiles from GADM v3.6
-    wget "https://biogeo.ucdavis.edu/data/gadm3.6/shp/gadm36_${code}_shp.zip"
+    wget --no-verbose --show-progress "https://biogeo.ucdavis.edu/data/gadm3.6/shp/gadm36_${code}_shp.zip"
 
     # for all African countries, unzip shapefiles for level-0 administrative
     #   regions (country-level), overwriting existing files

@@ -5,13 +5,16 @@ LSMS satellite images.
 Usage:
     python extract_features.py
 
+Note: this script does not take any command line options. Instead, set
+parameters in the "Parameters" section below.
+
 Prerequisites:
 1) download TFRecords, process them, and create incountry folds. See
     `preprocessing/1_process_tfrecords.ipynb` and
     `preprocessing/2_create_incountry_folds.ipynb`.
 2) either train models (see README.md for instructions), or download model
-    checkpoints into outputs/ directory
-    TODO: elaborate here
+    checkpoints into outputs/ directory using the checkpoint download
+    script in `preprocessing/4_download_model_checkpoints.sh`
 '''
 from __future__ import annotations
 
@@ -39,37 +42,56 @@ BATCH_SIZE = 128
 KEEP_FRAC = 1.0
 IS_TRAINING = False
 
+# set CACHE = True for faster feature extraction on multiple models
+# only if you have enough RAM (>= 50 GB)
+CACHE = False
+
 DHS_MODELS: list[str] = [
     # put paths to DHS models here (relative to OUTPUTS_ROOT_DIR)
-    # e.g., "dhs_ooc/DHS_OOC_A_..."
     'dhs_ooc/DHS_OOC_A_ms_samescaled_b64_fc01_conv01_lr0001',
     'dhs_ooc/DHS_OOC_B_ms_samescaled_b64_fc001_conv001_lr0001',
     'dhs_ooc/DHS_OOC_C_ms_samescaled_b64_fc001_conv001_lr001',
     'dhs_ooc/DHS_OOC_D_ms_samescaled_b64_fc001_conv001_lr01',
     'dhs_ooc/DHS_OOC_E_ms_samescaled_b64_fc01_conv01_lr001',
-
     'dhs_ooc/DHS_OOC_A_nl_random_b64_fc1.0_conv1.0_lr0001',
     'dhs_ooc/DHS_OOC_B_nl_random_b64_fc1.0_conv1.0_lr0001',
     'dhs_ooc/DHS_OOC_C_nl_random_b64_fc1.0_conv1.0_lr0001',
     'dhs_ooc/DHS_OOC_D_nl_random_b64_fc1.0_conv1.0_lr01',
     'dhs_ooc/DHS_OOC_E_nl_random_b64_fc1.0_conv1.0_lr0001',
-
     'dhs_ooc/DHS_OOC_A_rgb_same_b64_fc001_conv001_lr01',
     'dhs_ooc/DHS_OOC_B_rgb_same_b64_fc001_conv001_lr0001',
     'dhs_ooc/DHS_OOC_C_rgb_same_b64_fc001_conv001_lr0001',
     'dhs_ooc/DHS_OOC_D_rgb_same_b64_fc1.0_conv1.0_lr01',
     'dhs_ooc/DHS_OOC_E_rgb_same_b64_fc001_conv001_lr0001',
 
+    'dhs_incountry/DHS_Incountry_A_ms_samescaled_b64_fc01_conv01_lr001',
+    'dhs_incountry/DHS_Incountry_A_nl_random_b64_fc1.0_conv1.0_lr0001',
+    'dhs_incountry/DHS_Incountry_B_ms_samescaled_b64_fc1_conv1_lr001',
+    'dhs_incountry/DHS_Incountry_B_nl_random_b64_fc1.0_conv1.0_lr0001',
+    'dhs_incountry/DHS_Incountry_C_ms_samescaled_b64_fc1.0_conv1.0_lr0001',
+    'dhs_incountry/DHS_Incountry_C_nl_random_b64_fc1.0_conv1.0_lr0001',
+    'dhs_incountry/DHS_Incountry_D_ms_samescaled_b64_fc001_conv001_lr0001',
+    'dhs_incountry/DHS_Incountry_D_nl_random_b64_fc1.0_conv1.0_lr0001',
+    'dhs_incountry/DHS_Incountry_E_ms_samescaled_b64_fc001_conv001_lr0001',
+    'dhs_incountry/DHS_Incountry_E_nl_random_b64_fc01_conv01_lr001',
+
     # put paths to DHSNL models here (for transfer learning)
+    # - NOTE: when extracting features for transfer learning models,
+    #   set MODEL_PARAMS['num_outputs'] = 2. The transfer learning models output
+    #   predictions for both DMSP and VIIRS nightlight intensities.
+    'transfer/transfer_nlcenter_ms_b64_fc001_conv001_lr0001',
+    'transfer/transfer_nlcenter_rgb_b64_fc001_conv001_lr0001',
+
+    # get paths for DHS OOC keep-frac models
     # TODO
 ]
 
 LSMS_MODELS: list[str] = [
-    # put paths to LSMS models here
+    # put paths to LSMS models here (relative to OUTPUTS_ROOT_DIR)
     # TODO
 ]
 
-
+# choose which GPU to run on
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 MODEL_PARAMS = {
@@ -154,7 +176,10 @@ def read_params_json(model_dir: str, keys: Iterable[str]) -> tuple:
     json_path = os.path.join(model_dir, 'params.json')
     with open(json_path, 'r') as f:
         params = json.load(f)
-    result = tuple(params[k] for k in keys)
+    for k in keys:
+        if k not in params:
+            print(f'Did not find key "{k}" in {model_dir}/params.json. Setting to None.')
+    result = tuple(params.get(k, None) for k in keys)
     return result
 
 
@@ -192,7 +217,7 @@ def main() -> None:
 
         b, size, feed_dict = get_batcher(
             dataset=dataset, ls_bands=ls_bands, nl_band=nl_band,
-            num_epochs=len(model_dirs), cache=True)
+            num_epochs=len(model_dirs), cache=CACHE)
         batches_per_epoch = int(np.ceil(size / BATCH_SIZE))
 
         run_extraction_on_models(
