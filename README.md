@@ -28,8 +28,12 @@ For a list of known errata discovered since the paper was published, please cons
 ## Table of Contents
 
 * [Computing Requirements](#computing-requirements)
-* [Running trained models](#running-trained-models)
+* [Running trained CNN models](#running-trained-cnn-models)
+* [Training baseline models](#training-baseline-models)
 * [Training DHS models](#training-dhs-models)
+* [Training transfer learning models](#training-transfer-learning-models)
+* [Training LSMS models](#training-lsms-models)
+* [Code Formatting and Type Checking](#code-formatting-and-type-checking)
 
 
 ## Computing Requirements
@@ -48,14 +52,33 @@ The main software requirements are Python 3.7 with TensorFlow r1.15, and R 3.6. 
 conda env update -f env.yml --prune
 ```
 
-If you are using a GPU, you may need to also install CUDA 10 and cuDNN 7.
+If you are using a GPU, you may need to also install CUDA 10 and cuDNN 7. If you do not have a GPU, replace the `tensorflow-gpu=1.15.*` line in the `env.yml` file with `tensorflow=1.15.*`.
 
 
-## Running trained models
+## Running trained CNN models
 
-Follow the numbered files in the `preprocessing/` directory to download the necessary satellite images and shapefiles.
+Steps:
+
+1. Follow the numbered files in the `preprocessing/` directory to download the necessary satellite images, shapefiles, and trained model checkpoints.
+
+2. Identify interesting feature activation maps using the `max_activating.ipynb` (TODO) notebook.
+
+3. Run the `extract_features.py` script to use the trained CNN models to extract 512-dimensional feature vectors from each satellite image.
+
+4. Use the `models/dhs_resnet_ridge.py` and TODO notebooks to train ridge regression models on top of the extracted feature vectors. Training these ridge regression models is roughly equivalent to "fine-tuning" the final layer of the trained CNN models.
+
+5. Use the following notebooks to analyze the results:
+  - `model_analysis/dhs_ooc.py`
+  - `model_analysis/dhs_incountry.py` (TODO)
+  - keep-frac models (TODO)
+  - LSMS models (TODO)
+
+
+## Training baseline models
 
 TODO
+- KNN
+- Ridge on histograms
 
 
 ## Training DHS models
@@ -144,12 +167,12 @@ python train_dhs.py \
 ```
 
 
-## Training Transfer-learning Model
+## Training transfer learning models
 
 TODO
 
 
-## Training LSMS Models
+## Training LSMS models
 
 TODO
 
@@ -177,11 +200,12 @@ flake8 utils
 # a single module
 flake8 utils/analysis.py
 
-# a jupyter notebook
-# - W391: Blank line at end of file
+# a jupyter notebook - we ignore these error codes:
+# - E305: expected 2 blank lines after class or function definition
 # - E402: Module level import not at top of file
 # - F404: from __future__ imports must occur at the beginning of the file
-jupyter nbconvert preprocessing/1_process_tfrecords.ipynb --stdout --to script | flake8 - --extend-ignore=W391,E402,F404
+# - W391: Blank line at end of file
+jupyter nbconvert preprocessing/1_process_tfrecords.ipynb --stdout --to script | flake8 - --extend-ignore=E305,E402,F404,W391
 
 
 # TYPE CHECKING

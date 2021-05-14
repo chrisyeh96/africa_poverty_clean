@@ -79,8 +79,6 @@ class Batcher():
 
         if nl_label not in [None, 'center', 'mean']:
             raise ValueError(f'got {nl_label} for "nl_label"')
-        if nl_label is not None and nl_band is None:
-            raise ValueError('nl_band cannot be None if nl_label is not None')
         self.nl_label = nl_label
 
     def get_batch(self) -> tuple[tf.Operation, dict[str, tf.Tensor]]:
@@ -142,7 +140,8 @@ class Batcher():
         # batch then repeat => batches respect epoch boundaries
         # - i.e. last batch of each epoch might be smaller than batch_size
         dataset = dataset.batch(self.batch_size)
-        dataset = dataset.repeat(self.epochs)
+        if self.epochs > 1:
+            dataset = dataset.repeat(self.epochs)
 
         # prefetch 2 batches at a time
         dataset = dataset.prefetch(2)
@@ -175,7 +174,7 @@ class Batcher():
         elif self.ls_bands == 'ms':
             img_bands = ['BLUE', 'GREEN', 'RED', 'SWIR1', 'SWIR2', 'TEMP1', 'NIR']
         ex_bands = img_bands.copy()  # bands that we want to parse from the tf.train.Example protobuf
-        if (self.nl_band is not None) or (self.nl_label) is not None:
+        if (self.nl_band is not None) or (self.nl_label is not None):
             ex_bands += ['NIGHTLIGHTS']
             if self.nl_band is not None:
                 img_bands += ['NIGHTLIGHTS']
@@ -203,8 +202,8 @@ class Batcher():
                 means = MEANS_DICT[self.normalize]
                 std_devs = STD_DEVS_DICT[self.normalize]
 
-            # for each band, subtract mean and divide by std dev
-            # then reshape to (255, 255) and crop to (224, 224)
+            # for each band, reshape to (255, 255) and crop to (224, 224)
+            # then subtract mean and divide by std dev
             for band in ex_bands:
                 ex[band].set_shape([255 * 255])
                 ex[band] = tf.reshape(ex[band], [255, 255])[15:-16, 15:-16]
@@ -222,23 +221,20 @@ class Batcher():
 
         result = {'images': img, 'locs': loc, 'years': year}
 
+        if self.label_name is not None:
+            label = ex.get(self.label_name, float('nan'))
         if self.nl_label == 'mean':
             nl_label = tf.reduce_mean(ex['NIGHTLIGHTS'])
         elif self.nl_label == 'center':
             nl_label = ex['NIGHTLIGHTS'][112, 112]
 
-        if self.label_name is None:
-            if self.nl_label is None:
-                label = None
-            else:
-                label = nl_label
-        else:
-            label = ex.get(self.label_name, float('nan'))
-            if self.nl_label is not None:
-                label = tf.stack([label, nl_label])
-
-        if label is not None:
+        if self.label_name is None and self.nl_label is not None:
+            result['labels'] = nl_label
+        elif self.label_name is not None and self.nl_label is None:
             result['labels'] = label
+        elif self.label_name is not None and self.nl_label is not None:
+            result['labels'] = tf.stack([label, nl_label])
+
         if self.scalar_features is not None:
             for key in self.scalar_features:
                 result[key] = ex[key]
