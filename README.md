@@ -129,6 +129,8 @@ Setting                 | `CNN MS`                                    | `CNN NL`
 `imagenet_weights_path` | `./models/imagenet_resnet18_tensorpack.npz` | `None`
 `hs_weight_init`        | `samescaled`                                | `None`
 
+The `imagenet_resnet18_tensorpack.npz` ImageNet pretrained weights can be downloaded from [here](https://github.com/sustainlab-group/africa_poverty/releases/download/v1.0.1/imagenet_resnet18_tensorpack.npz).
+
 For cross-validation hyper-parameter tuning, we tested the following values:
 
 Setting                        | Values Tested
