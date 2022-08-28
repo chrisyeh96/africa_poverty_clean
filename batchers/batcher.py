@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Optional
 
 import tensorflow as tf
 
@@ -11,14 +10,14 @@ from batchers.dataset_constants import MEANS_DICT, STD_DEVS_DICT
 class Batcher():
     def __init__(self,
                  tfrecord_files: Iterable[str] | tf.Tensor,
-                 label_name: Optional[str] = None,
-                 scalar_features: Optional[Mapping[str, tf.DType]] = None,
-                 ls_bands: Optional[str] = 'rgb',
-                 nl_band: Optional[str] = None,
-                 nl_label: Optional[str] = None,
+                 label_name: str | None = None,
+                 scalar_features: Mapping[str, tf.DType] | None = None,
+                 ls_bands: str | None = 'rgb',
+                 nl_band: str | None = None,
+                 nl_label: str | None = None,
                  batch_size: int = 1,
                  epochs: int = 1,
-                 normalize: Optional[str] = None,
+                 normalize: str | None = None,
                  shuffle: bool = False,
                  augment: bool = False,
                  clipneg: bool = True,
