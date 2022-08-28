@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Mapping
 import os
 import time
-from typing import Any, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -18,8 +18,8 @@ from utils.analysis import evaluate
 from utils.run import load, run_batches
 
 # loss_fn(labels, preds, weights) -> (loss_total, loss_mse, loss_reg, loss_summaries)
-LossFn = Callable[[tf.Tensor, tf.Tensor, Optional[tf.Tensor]],
-                  Tuple[tf.Tensor, tf.Tensor, tf.Tensor, Optional[tf.Tensor]]]
+LossFn = Callable[[tf.Tensor, tf.Tensor, tf.Tensor | None],
+                  tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor | None]]
 
 
 class BaseTrainer(metaclass=ABCMeta):
@@ -35,14 +35,14 @@ class BaseTrainer(metaclass=ABCMeta):
                  val_preds: tf.Tensor,
                  sess: tf.Session,
                  steps_per_epoch: int,
-                 ls_bands: Optional[str],
-                 nl_band: Optional[str],
+                 ls_bands: str | None,
+                 nl_band: str | None,
                  learning_rate: float,
                  lr_decay: float,
                  out_dir: str,
-                 init_ckpt_dir: Optional[str],
-                 imagenet_weights_path: Optional[str],
-                 hs_weight_init: Optional[str],
+                 init_ckpt_dir: str | None,
+                 imagenet_weights_path: str | None,
+                 hs_weight_init: str | None,
                  exclude_final_layer: bool,
                  image_summaries: bool,
                  loss_fn: LossFn,
@@ -243,9 +243,9 @@ class BaseTrainer(metaclass=ABCMeta):
                     preds: tf.Tensor,
                     split: str,
                     eval_summaries: Mapping[str, tf.Tensor],
-                    weights: Optional[tf.Tensor] = None,
-                    init_iter: Optional[tf.Operation] = None,
-                    feed_dict: Optional[Mapping[tf.Tensor, Any]] = None,
+                    weights: tf.Tensor | None = None,
+                    init_iter: tf.Operation | None = None,
+                    feed_dict: Mapping[tf.Tensor, Any] | None = None,
                     max_nbatches: int = -1
                     ) -> None:
         '''
@@ -285,8 +285,8 @@ class BaseTrainer(metaclass=ABCMeta):
             eval_summaries=eval_summaries)
 
     def eval_train(self,
-                   init_iter: Optional[tf.Operation] = None,
-                   feed_dict: Optional[Mapping[tf.Tensor, Any]] = None,
+                   init_iter: tf.Operation | None = None,
+                   feed_dict: Mapping[tf.Tensor, Any] | None = None,
                    max_nbatches: int = -1
                    ) -> None:
         '''Run trained model on training dataset.
@@ -305,9 +305,9 @@ class BaseTrainer(metaclass=ABCMeta):
 
     def _init_vars(self,
                    model: base_model.BaseModel,
-                   ckpt_dir: Optional[str],
-                   imagenet_weights_path: Optional[str],
-                   hs_weight_init: Optional[str],
+                   ckpt_dir: str | None,
+                   imagenet_weights_path: str | None,
+                   hs_weight_init: str | None,
                    exclude_final_layer: bool,
                    ) -> None:
         '''Initialize the variables in the current tf.Graph.
@@ -358,7 +358,7 @@ class BaseTrainer(metaclass=ABCMeta):
             save_path=os.path.join(self.out_dir, 'ckpt'),
             global_step=self.epoch)
 
-    def log_results(self, csv_path: Optional[str] = None) -> None:
+    def log_results(self, csv_path: str | None = None) -> None:
         '''Saves results log to a CSV file. Defaults to `out_dir/results.csv` if no
         csv_path is given. If file already exists, it will be overwritten.'''
         if csv_path is None:
@@ -373,15 +373,15 @@ class BaseTrainer(metaclass=ABCMeta):
 
     @abstractmethod
     def evaluate_preds(self, labels: np.ndarray, preds: np.ndarray, split: str,
-                       weights: Optional[np.ndarray] = None,
-                       eval_summaries: Optional[Mapping[str, tf.Tensor]] = None
+                       weights: np.ndarray | None = None,
+                       eval_summaries: Mapping[str, tf.Tensor] | None = None
                        ) -> Any:
         raise NotImplementedError
 
     @abstractmethod
     def eval_val(self,
-                 init_iter: Optional[tf.Operation] = None,
-                 feed_dict: Optional[Mapping[tf.Tensor, Any]] = None,
+                 init_iter: tf.Operation | None = None,
+                 feed_dict: Mapping[tf.Tensor, Any] | None = None,
                  max_nbatches: int = -1
                  ) -> None:
         '''Run trained model on validation dataset. Saves model checkpoint if
@@ -411,14 +411,14 @@ class RegressionTrainer(BaseTrainer):
                  val_preds: tf.Tensor,
                  sess: tf.Session,
                  steps_per_epoch: int,
-                 ls_bands: Optional[str],
-                 nl_band: Optional[str],
+                 ls_bands: str | None,
+                 nl_band: str | None,
                  learning_rate: float,
                  lr_decay: float,
                  out_dir: str,
-                 init_ckpt_dir: Optional[str],
-                 imagenet_weights_path: Optional[str],
-                 hs_weight_init: Optional[str],
+                 init_ckpt_dir: str | None,
+                 imagenet_weights_path: str | None,
+                 hs_weight_init: str | None,
                  exclude_final_layer: bool = False,
                  image_summaries: bool = True):
         '''See BaseTrainer for args descriptions'''
@@ -434,8 +434,8 @@ class RegressionTrainer(BaseTrainer):
             results_cols=['r2', 'R2', 'mse', 'rank'])
 
     def eval_val(self,
-                 init_iter: Optional[tf.Operation] = None,
-                 feed_dict: Optional[Mapping[tf.Tensor, Any]] = None,
+                 init_iter: tf.Operation | None = None,
+                 feed_dict: Mapping[tf.Tensor, Any] | None = None,
                  max_nbatches: int = -1
                  ) -> None:
         '''See BaseTrainer for args descriptions'''
@@ -457,8 +457,8 @@ class RegressionTrainer(BaseTrainer):
             print('New best MSE on val! Saved checkpoint to', saved_ckpt_path)
 
     def evaluate_preds(self, labels: np.ndarray, preds: np.ndarray, split: str,
-                       weights: Optional[np.ndarray] = None,
-                       eval_summaries: Optional[Mapping[str, tf.Tensor]] = None
+                       weights: np.ndarray | None = None,
+                       eval_summaries: Mapping[str, tf.Tensor] | None = None
                        ) -> tuple[float, float, float, float]:
         '''Helper method to calculate r^2, R^2, mse, and rank.
 
@@ -536,14 +536,14 @@ class ClassificationTrainer(BaseTrainer):
                  val_preds: tf.Tensor,
                  sess: tf.Session,
                  steps_per_epoch: int,
-                 ls_bands: Optional[str],
-                 nl_band: Optional[str],
+                 ls_bands: str | None,
+                 nl_band: str | None,
                  learning_rate: float,
                  lr_decay: float,
                  out_dir: str,
-                 init_ckpt_dir: Optional[str],
-                 imagenet_weights_path: Optional[str],
-                 hs_weight_init: Optional[str],
+                 init_ckpt_dir: str | None,
+                 imagenet_weights_path: str | None,
+                 hs_weight_init: str | None,
                  exclude_final_layer: bool = False,
                  image_summaries: bool = True):
         '''
@@ -561,8 +561,8 @@ class ClassificationTrainer(BaseTrainer):
             results_cols=['loss_xent', 'acc'])
 
     def eval_val(self,
-                 init_iter: Optional[tf.Operation] = None,
-                 feed_dict: Optional[Mapping[tf.Tensor, Any]] = None,
+                 init_iter: tf.Operation | None = None,
+                 feed_dict: Mapping[tf.Tensor, Any] | None = None,
                  max_nbatches: int = -1
                  ) -> None:
         '''See BaseTrainer for args descriptions'''
@@ -584,8 +584,8 @@ class ClassificationTrainer(BaseTrainer):
             print('New best acc on val! Saved checkpoint to', saved_ckpt_path)
 
     def evaluate_preds(self, labels: np.ndarray, preds: np.ndarray, split: str,
-                       weights: Optional[np.ndarray] = None,
-                       eval_summaries: Optional[Mapping[str, tf.Tensor]] = None
+                       weights: np.ndarray | None = None,
+                       eval_summaries: Mapping[str, tf.Tensor] | None = None
                        ) -> tuple[float, float]:
         '''Helper method to calculate loss_xent and accuracy.
 
